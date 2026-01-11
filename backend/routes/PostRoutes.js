@@ -1,20 +1,47 @@
 import express from "express"
-import { PostController } from "../controller/PostController.js";
+import { createPost, getPost, getPostById, updatePost, deletePost, getUserListings, searchNearby, getRecommendations } from "../controller/PostController.js";
+import { protect } from "../middleware/auth.js";
+import { uploadListing } from "../config/multer.js";
 const PostRouter = express.Router();
 
 /**
  * @swagger
  * tags:
  *   name: Posts
- *   description: API endpoints for managing posts
+ *   description: API endpoints for managing rental posts
  */
 
 /**
  * @swagger
  * /api/posts:
  *   get:
- *     summary: Get all posts
+ *     summary: Get all posts with filters
  *     tags: [Posts]
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
  *         description: Successfully fetched all posts
@@ -32,13 +59,29 @@ const PostRouter = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - name
+ *               - description
+ *               - price
+ *               - category
+ *               - userId
  *             properties:
- *               title:
+ *               name:
  *                 type: string
  *               description:
  *                 type: string
  *               price:
  *                 type: number
+ *               category:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               location:
+ *                 type: object
  *     responses:
  *       201:
  *         description: Post created successfully
@@ -82,12 +125,18 @@ const PostRouter = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *               title:
+ *               name:
  *                 type: string
  *               description:
  *                 type: string
  *               price:
  *                 type: number
+ *               category:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *               location:
+ *                 type: object
  *     responses:
  *       200:
  *         description: Post updated successfully
@@ -114,10 +163,13 @@ const PostRouter = express.Router();
  *         description: Post not found
  */
 
-PostRouter.post('/', PostController.createPost);
-PostRouter.get('/', PostController.getPost);
-PostRouter.get('/:id', PostController.getPostById);
-PostRouter.put('/:id', PostController.updatePost);
-PostRouter.delete('/:id', PostController.deletePost);
+PostRouter.post('/', protect, uploadListing.array('images', 10), createPost);
+PostRouter.get('/my-listings', protect, getUserListings);
+PostRouter.get('/nearby', searchNearby);
+PostRouter.get('/recommendations', getRecommendations);
+PostRouter.get('/', getPost);
+PostRouter.get('/:id', getPostById);
+PostRouter.put('/:id', protect, uploadListing.array('images', 10), updatePost);
+PostRouter.delete('/:id', protect, deletePost);
 
 export default PostRouter;
