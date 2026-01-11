@@ -1,78 +1,125 @@
+import { Link } from "react-router-dom";
+import { ArrowRight, Zap, Users, Shield } from "lucide-react";
+import { useAuth } from "../../context/useAuth";
+
 export default function Hero() {
+  const { isAuthenticated } = useAuth();
+
   return (
-    <div class="bg-white">
-      <div class="relative isolate overflow-hidden">
-        <div class="px-6 lg:px-8">
-          <div class="mx-auto max-w-2xl py-10 sm:py-48 lg:py-28">
-            <div class="hidden sm:mb-8 sm:flex sm:justify-center">
-              <div class="relative flex items-center justify-center gap-3 rounded-lg bg-white p-1 pr-2.5 text-sm font-medium leading-6 text-gray-600 shadow-sm ring-1 ring-gray-900/10 hover:bg-gray-50">
-                <span class="inline-block rounded-md bg-white px-2 ring-1 ring-inset ring-gray-900/10">
-                  New release
-                </span>
-                <a
-                  href="#"
-                  class="inline-flex items-center justify-center gap-1"
-                >
-                  <span class="absolute inset-0" aria-hidden="true"></span>
-                  Explore our latest features
-                  <svg
-                    class="h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M5 12H19M19 12L13 6M19 12L13 18"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    ></path>
-                  </svg>
-                </a>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50">
+      {/* Main Hero Section */}
+      <div className="max-w-screen-xl mx-auto px-4 py-20 sm:py-32 lg:py-40">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
+          <div>
+            <div className="inline-flex items-center gap-2 bg-pink-100 text-pink-700 px-4 py-2 rounded-full mb-6">
+              <Zap size={18} />
+              <span className="text-sm font-semibold">Rent Anything, Anytime</span>
+            </div>
+
+            <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Share Your Items, Earn Income
+            </h1>
+
+            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              RentIt connects you with people in your community who want to rent the items you're not using. Turn your unused possessions into a steady income stream.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+              <Link
+                to="/listings"
+                className="inline-flex items-center justify-center gap-2 bg-pink-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-pink-700 transition-colors"
+              >
+                Browse Listings
+                <ArrowRight size={20} />
+              </Link>
+              <Link
+                to={isAuthenticated ? "/listings" : "/signup"}
+                className="inline-flex items-center justify-center gap-2 border-2 border-pink-600 text-pink-600 px-8 py-3 rounded-lg font-semibold hover:bg-pink-50 transition-colors"
+              >
+                {isAuthenticated ? "View My Listings" : "Start Renting"}
+                <ArrowRight size={20} />
+              </Link>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <p className="text-3xl font-bold text-gray-900">10K+</p>
+                <p className="text-gray-600">Active Listings</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">5K+</p>
+                <p className="text-gray-600">Happy Users</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">50M+</p>
+                <p className="text-gray-600">Items Rented</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">4.9★</p>
+                <p className="text-gray-600">User Rating</p>
               </div>
             </div>
-            <div class="sm:text-center">
-              <h1 class="text-pretty text-4xl font-semibold tracking-tight text-gray-900 sm:text-6xl">
-                Achieve more with less effort
-              </h1>
-              <p class="mt-6 text-lg leading-8 text-gray-600">
-                Simplify your workflows and automate daily tasks with ease,
-                saving time to focus on what matters most for your business.
-              </p>
-            </div>
-            <div class="mt-10 flex items-center justify-start gap-6 sm:justify-center">
-              <a
-                href="#"
-                class="inline-flex items-center justify-center gap-2 rounded-md bg-pink-500 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-pink-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500"
-              >
-                <svg
-                  class="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <path
-                    d="M10.9 8.8L10.6577 8.66152C10.1418 8.36676 9.5 8.73922 9.5 9.33333L9.5 14.6667C9.5 15.2608 10.1418 15.6332 10.6577 15.3385L10.9 15.2L15.1 12.8C15.719 12.4463 15.719 11.5537 15.1 11.2L10.9 8.8Z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-                Demo
-              </a>
-              <a href="#" class="text-sm font-semibold leading-6 text-gray-900">
-                Learn more
-              </a>
+          </div>
+
+          {/* Right Image Placeholder */}
+          <div className="hidden lg:flex items-center justify-center">
+            <div className="relative w-full aspect-square max-w-md">
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-400 to-pink-600 rounded-2xl opacity-20"></div>
+              <div className="absolute inset-8 bg-white rounded-2xl shadow-2xl flex items-center justify-center">
+                <div className="text-center">
+                  <Users size={80} className="text-pink-600 mx-auto mb-4" />
+                  <p className="text-gray-600 font-semibold">Community Driven</p>
+                  <p className="text-sm text-gray-500 mt-2">Connect with neighbors and earn together</p>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Features Section */}
+        <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            {
+              icon: <Zap className="w-10 h-10 text-pink-600" />,
+              title: "Easy to Use",
+              description: "List your items in minutes with our simple, intuitive interface.",
+            },
+            {
+              icon: <Users className="w-10 h-10 text-pink-600" />,
+              title: "Verified Community",
+              description: "Rent from verified users in your neighborhood with complete peace of mind.",
+            },
+            {
+              icon: <Shield className="w-10 h-10 text-pink-600" />,
+              title: "Protected Transactions",
+              description: "All rentals are secured with our comprehensive protection program.",
+            },
+          ].map((feature, index) => (
+            <div key={index} className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-4">{feature.icon}</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
+              <p className="text-gray-600">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-pink-600 text-white py-16">
+        <div className="max-w-screen-xl mx-auto px-4 text-center">
+          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Ready to Get Started?</h2>
+          <p className="text-pink-100 text-lg mb-8 max-w-2xl mx-auto">
+            Join thousands of people already earning money by sharing what they don't use.
+          </p>
+          <Link
+            to={isAuthenticated ? "/listings" : "/signup"}
+            className="inline-flex items-center gap-2 bg-white text-pink-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+          >
+            {isAuthenticated ? "Browse Listings" : "Create Your Free Account"}
+            <ArrowRight size={20} />
+          </Link>
         </div>
       </div>
     </div>
