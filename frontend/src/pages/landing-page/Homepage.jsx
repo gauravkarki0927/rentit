@@ -1,13 +1,10 @@
-import Footer from "../../components/free-components/Footer";
-import Header from "../../components/free-components/Header";
-import Hero from "../../components/free-components/Hero";
+import React from 'react'
+import Hero from '../../components/free-components/Hero'
 
 export default function HomePage(){
     return(
-        <>
-        <Header />
+        <div>
         <Hero />
-        <Footer />
-        </>
+        </div>
     )
 }
