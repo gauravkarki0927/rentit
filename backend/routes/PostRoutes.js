@@ -1,5 +1,5 @@
 import express from "express"
-import { createPost, getPost, getPostById, updatePost, deletePost, getUserListings, searchNearby, getRecommendations } from "../controller/PostController.js";
+import { createPost, getPost, getPostById, updatePost, deletePost, getUserListings, searchNearby, getRecommendations, searchPrefix } from "../controller/PostController.js";
 import { protect } from "../middleware/auth.js";
 import { uploadListing } from "../config/multer.js";
 const PostRouter = express.Router();
@@ -165,6 +165,7 @@ const PostRouter = express.Router();
 
 PostRouter.post('/', protect, uploadListing.array('images', 10), createPost);
 PostRouter.get('/my-listings', protect, getUserListings);
+PostRouter.get('/search/prefix', searchPrefix);
 PostRouter.get('/nearby', searchNearby);
 PostRouter.get('/recommendations', getRecommendations);
 PostRouter.get('/', getPost);

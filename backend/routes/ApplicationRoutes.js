@@ -12,6 +12,7 @@ const router = express.Router();
 router.post("/", protect, createApplication);
 router.get("/owner", protect, getOwnerApplications);
 router.get("/my", protect, getMyApplications);
+router.get("/my-applications", protect, getMyApplications); // Alias for user dashboard
 router.put("/:id/status", protect, updateApplicationStatus);
 
 export default router;

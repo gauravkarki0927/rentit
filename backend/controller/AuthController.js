@@ -1,11 +1,13 @@
 import User from "../model/UserModel.js";
 import jwt from "jsonwebtoken";
 import crypto from 'crypto';
+import {  } from '../utils/EmailService.js';
+import sendMail from "../utils/sendEmail.js";
 
 // Mock email sender
-const sendEmail = async (options) => {
-  console.log(`[EMAIL SEND MOCK] To: ${options.email}, Subject: ${options.subject}, Message: ${options.message}`);
-};
+// const sendEmail = async (options) => {
+//   console.log(`[EMAIL SEND MOCK] To: ${options.email}, Subject: ${options.subject}, Message: ${options.message}`);
+// };
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -39,7 +41,7 @@ const register = async (req, res) => {
       name,
       email,
       password,
-      userType: userType || "both",
+      userType: userType || "tenant",
       address: address || {},
       isVerified: true
     });
@@ -208,7 +210,7 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
     try {
-      await sendEmail({
+      await sendMail({
         email: user.email,
         subject: 'Password Reset',
         message: `Your password reset code is ${resetToken}`

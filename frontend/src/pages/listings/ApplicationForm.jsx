@@ -95,7 +95,7 @@ export default function ApplicationForm() {
           ...formData,
         },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
         }
       );
 
@@ -134,7 +134,7 @@ export default function ApplicationForm() {
             amount: paymentAmount,
           },
           {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
           }
         );
 
@@ -157,7 +157,7 @@ export default function ApplicationForm() {
             paymentMethod: "cash",
           },
           {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
           }
         );
 

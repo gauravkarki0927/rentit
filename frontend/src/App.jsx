@@ -20,6 +20,7 @@ import ForgotPassword from './pages/auth/ForgotPassword'
 import ApplicationForm from './pages/listings/ApplicationForm'
 import PaymentCallback from './pages/listings/PaymentCallback'
 import OwnerDashboard from './pages/user-panel/OwnerDashboard'
+import { ToastContainer } from "react-toastify";
 
 // Protected Route Component
 function ProtectedRoute({ children, requireAdmin = false }) {
@@ -55,7 +56,7 @@ function AppContent() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         
         {/* Protected Routes */}
-        <Route path="/dashboard" element={
+        <Route path="/tenant-dashboard" element={
           <ProtectedRoute>
             <UserDashboard />
           </ProtectedRoute>
@@ -109,6 +110,7 @@ export default function App() {
     <Router>
       <AuthProvider>
         <AppContent />
+         <ToastContainer />
       </AuthProvider>
     </Router>
   )

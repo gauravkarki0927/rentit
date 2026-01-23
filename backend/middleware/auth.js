@@ -48,3 +48,36 @@ export const authorize = (...roles) => {
     next();
   };
 };
+
+// Check if user is admin
+export const isAdmin = (req, res, next) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Admin privileges required.",
+    });
+  }
+  next();
+};
+
+// Check if user is owner
+export const isOwner = (req, res, next) => {
+  if (req.user.userType !== "owner") {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Owner privileges required.",
+    });
+  }
+  next();
+};
+
+// Check if user is renter
+export const isRenter = (req, res, next) => {
+  if (req.user.userType !== "tenant") {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Renter privileges required.",
+    });
+  }
+  next();
+};

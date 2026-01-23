@@ -45,11 +45,13 @@ const UserSchema = new Schema(
       state: String,
       country: String,
       zipCode: String,
+      latitude: Number,
+      longitude: Number,
     },
     userType: {
       type: String,
-      enum: ["owner", "renter", "both"],
-      default: "both",
+      enum: ["tenant", "owner"],
+      default: "tenant",
     },
     role: {
       type: String,

@@ -12,7 +12,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000', // change if needed
+        url: `http://localhost:${process.env.PORT || 5000}`,
       },
     ],
   },
@@ -24,6 +24,7 @@ const swaggerSpec = swaggerJsdoc(options);
 
 // Export a reusable function to plug into Express
 export const swaggerDocs = (app) => {
+  const port = process.env.PORT || 5000;
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  console.log('📄 Swagger Docs available at: http://localhost:3000/api-docs');
+  console.log(`📄 Swagger Docs available at: http://localhost:${port}/api-docs`);
 };

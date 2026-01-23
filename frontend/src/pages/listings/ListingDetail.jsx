@@ -14,7 +14,12 @@ import {
   Calendar,
   AlertCircle,
 } from "lucide-react";
-import { Card, Loading, Alert, Button } from "../../components/common/UIComponents";
+import {
+  Card,
+  Loading,
+  Alert,
+  Button,
+} from "../../components/common/UIComponents";
 import { useAuth } from "../../context/useAuth";
 
 export default function ListingDetail() {
@@ -28,8 +33,9 @@ export default function ListingDetail() {
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
 
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+  const BACKEND_URL =
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+  const API_BASE_URL = `${BACKEND_URL}/api`;
 
   useEffect(() => {
     fetchListingDetail();
@@ -72,7 +78,7 @@ export default function ListingDetail() {
   const handlePrevImage = () => {
     if (listing?.images?.length) {
       setCurrentImageIndex((prev) =>
-        prev === 0 ? listing.images.length - 1 : prev - 1
+        prev === 0 ? listing.images.length - 1 : prev - 1,
       );
     }
   };
@@ -80,7 +86,7 @@ export default function ListingDetail() {
   const handleNextImage = () => {
     if (listing?.images?.length) {
       setCurrentImageIndex((prev) =>
-        prev === listing.images.length - 1 ? 0 : prev + 1
+        prev === listing.images.length - 1 ? 0 : prev + 1,
       );
     }
   };
@@ -120,10 +126,17 @@ export default function ListingDetail() {
 
   const averageRating =
     reviews.length > 0
-      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+      ? (
+          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        ).toFixed(1)
       : 0;
 
-  const images = listing.images && listing.images.length > 0 ? listing.images : ["/placeholder-listing.jpg"];
+  const images =
+    listing.images && listing.images.length > 0
+      ? listing.images.map((img) =>
+          img.startsWith("http") ? img : `${BACKEND_URL}${img}`,
+        )
+      : [`${BACKEND_URL}/uploads/placeholder-listing.jpg`];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -147,6 +160,7 @@ export default function ListingDetail() {
                 alt={listing.name}
                 className="w-full h-full object-cover"
               />
+
               {images.length > 1 && (
                 <>
                   <button
@@ -176,10 +190,16 @@ export default function ListingDetail() {
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                      idx === currentImageIndex ? "border-blue-600" : "border-gray-300"
+                      idx === currentImageIndex
+                        ? "border-blue-600"
+                        : "border-gray-300"
                     }`}
                   >
-                    <img src={img} alt={`${listing.name} ${idx}`} className="w-full h-full object-cover" />
+                    <img
+                      src={img}
+                      alt={`${listing.name} ${idx}`}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -198,7 +218,9 @@ export default function ListingDetail() {
                     {listing.location?.city && `${listing.location.city}, `}
                     {listing.location?.state}
                   </p>
-                  {listing.location?.zipCode && <p className="text-sm">{listing.location.zipCode}</p>}
+                  {listing.location?.zipCode && (
+                    <p className="text-sm">{listing.location.zipCode}</p>
+                  )}
                 </div>
               </div>
 
@@ -227,7 +249,11 @@ export default function ListingDetail() {
                 {averageRating > 0 && (
                   <div className="flex items-center gap-3">
                     <div className="bg-yellow-100 p-3 rounded-lg">
-                      <Star className="text-yellow-600" size={20} fill="currentColor" />
+                      <Star
+                        className="text-yellow-600"
+                        size={20}
+                        fill="currentColor"
+                      />
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Rating</p>
@@ -240,7 +266,9 @@ export default function ListingDetail() {
               {/* Description */}
               <div className="mt-6">
                 <h2 className="text-xl font-bold mb-2">Description</h2>
-                <p className="text-gray-700 leading-relaxed">{listing.description}</p>
+                <p className="text-gray-700 leading-relaxed">
+                  {listing.description}
+                </p>
               </div>
 
               {/* Owner Information */}
@@ -260,7 +288,10 @@ export default function ListingDetail() {
                         <Mail size={20} className="text-gray-600" />
                         <div>
                           <p className="text-sm text-gray-600">Email</p>
-                          <a href={`mailto:${listing.userId.email}`} className="text-blue-600 hover:underline">
+                          <a
+                            href={`mailto:${listing.userId.email}`}
+                            className="text-blue-600 hover:underline"
+                          >
                             {listing.userId.email}
                           </a>
                         </div>
@@ -273,28 +304,41 @@ export default function ListingDetail() {
 
             {/* Reviews Section */}
             <Card className="p-6 mt-6">
-              <h2 className="text-xl font-bold mb-4">Reviews ({reviews.length})</h2>
+              <h2 className="text-xl font-bold mb-4">
+                Reviews ({reviews.length})
+              </h2>
               {loadingReviews ? (
                 <div className="text-center py-8">Loading reviews...</div>
               ) : reviews.length > 0 ? (
                 <div className="space-y-4">
                   {reviews.map((review) => (
-                    <div key={review._id} className="border-b pb-4 last:border-b-0">
+                    <div
+                      key={review._id}
+                      className="border-b pb-4 last:border-b-0"
+                    >
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="font-semibold">{review.reviewer?.name || "Anonymous"}</p>
+                          <p className="font-semibold">
+                            {review.reviewer?.name || "Anonymous"}
+                          </p>
                           <div className="flex items-center gap-1">
                             {[...Array(5)].map((_, i) => (
                               <Star
                                 key={i}
                                 size={16}
-                                className={i < review.rating ? "text-yellow-500" : "text-gray-300"}
+                                className={
+                                  i < review.rating
+                                    ? "text-yellow-500"
+                                    : "text-gray-300"
+                                }
                                 fill="currentColor"
                               />
                             ))}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
                       <p className="text-gray-700">{review.comment}</p>
                     </div>
@@ -312,13 +356,20 @@ export default function ListingDetail() {
             <Card className="p-6 sticky top-24 mb-6">
               <div className="mb-4">
                 <p className="text-gray-600 text-sm mb-1">Monthly Rent</p>
-                <p className="text-4xl font-bold text-green-600">Rs. {listing.price}</p>
+                <p className="text-4xl font-bold text-green-600">
+                  Rs. {listing.price}
+                </p>
               </div>
 
               {user?._id === listing?.userId?._id ? (
                 <div className="bg-gray-50 p-4 rounded-lg text-center">
-                  <AlertCircle className="mx-auto mb-2 text-gray-400" size={32} />
-                  <p className="text-gray-600 font-medium">This is your listing</p>
+                  <AlertCircle
+                    className="mx-auto mb-2 text-gray-400"
+                    size={32}
+                  />
+                  <p className="text-gray-600 font-medium">
+                    This is your listing
+                  </p>
                 </div>
               ) : (
                 <Button
@@ -344,7 +395,9 @@ export default function ListingDetail() {
             {/* Similar Listings */}
             <Card className="p-6">
               <h3 className="font-bold mb-4">Similar Listings</h3>
-              <p className="text-gray-500 text-center py-8">Check back soon for similar properties</p>
+              <p className="text-gray-500 text-center py-8">
+                Check back soon for similar properties
+              </p>
             </Card>
           </div>
         </div>

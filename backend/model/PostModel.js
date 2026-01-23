@@ -61,7 +61,7 @@ const CreatePostSchema = new Schema(
     status: {
       type: String,
       enum: ["available", "rented", "inactive"],
-      default: "available",
+      default: "inactive",
     },
     rating: {
       type: Number,

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { Button, Input, Alert } from "../../components/common/UIComponents";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, MapPin } from "lucide-react";
+import { successToast, errorToast } from "../../utils/toast";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -10,46 +11,92 @@ export default function SignUp() {
     email: "",
     password: "",
     confirmPassword: "",
-    userType: "both",
+    userType: "tenant",
     address: {
       street: "",
       city: "",
       state: "",
       zipCode: "",
+      latitude: null,
+      longitude: null,
     },
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const [locationStatus, setLocationStatus] = useState("idle"); // idle, loading, success, error
+  const { register, userLocation } = useAuth();
   const navigate = useNavigate();
+
+  // Load geolocation on component mount
+  useEffect(() => {
+    if (userLocation) {
+      setFormData((prev) => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+        },
+      }));
+      setLocationStatus("success");
+    }
+  }, [userLocation]);
+
+  const handleGetLocation = () => {
+    setLocationStatus("loading");
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData((prev) => ({
+            ...prev,
+            address: {
+              ...prev.address,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            },
+          }));
+          setLocationStatus("success");
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setLocationStatus("error");
+        },
+      );
+    } else {
+      setLocationStatus("error");
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.includes('address.')) {
-      const key = name.split('.')[1];
-      setFormData(prev => ({
+    if (name.includes("address.")) {
+      const key = name.split(".")[1];
+      setFormData((prev) => ({
         ...prev,
-        address: { ...prev.address, [key]: value }
+        address: { ...prev.address, [key]: value },
       }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = "Name is required";
-    if (!formData.email.includes("@")) newErrors.email = "Valid email is required";
-    if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords do not match";
+    if (!formData.email.includes("@"))
+      newErrors.email = "Valid email is required";
+    if (formData.password.length < 6)
+      newErrors.password = "Password must be at least 6 characters";
+    if (formData.password !== formData.confirmPassword)
+      newErrors.confirmPassword = "Passwords do not match";
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -61,14 +108,18 @@ export default function SignUp() {
       formData.email,
       formData.password,
       formData.confirmPassword,
-      formData.userType
+      formData.userType,
+      formData.address,
     );
 
     if (result.success) {
-      navigate("/dashboard");
+      successToast("Account created successfully!");
+      navigate("/login");
     } else {
+      errorToast(result.message || "Something went wrong!");
       setErrors({ submit: result.message });
     }
+    setErrors({ submit: result.message });
     setLoading(false);
   };
 
@@ -76,8 +127,12 @@ export default function SignUp() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">Create Account</h2>
-          <p className="text-center text-gray-600 mb-6">Join RentIt and start earning today</p>
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">
+            Create Account
+          </h2>
+          <p className="text-center text-gray-600 mb-6">
+            Join RentIt and start earning today
+          </p>
 
           {errors.submit && <Alert type="error" message={errors.submit} />}
 
@@ -86,7 +141,7 @@ export default function SignUp() {
               label="Full Name"
               name="name"
               type="text"
-              placeholder="John Doe"
+              placeholder="Ram Bahadur"
               value={formData.name}
               onChange={handleChange}
               error={errors.name}
@@ -97,7 +152,7 @@ export default function SignUp() {
               label="Email Address"
               name="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder="user@gmail.com"
               value={formData.email}
               onChange={handleChange}
               error={errors.email}
@@ -114,8 +169,8 @@ export default function SignUp() {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
               >
-                <option value="renter">Owner (Want to rent room)</option>
-                <option value="owner">Tenant (Want to rent out room)</option>
+                <option value="tenant">Tenant (Want to rent room)</option>
+                <option value="owner">Owner (Want to upload room)</option>
               </select>
             </div>
 
@@ -142,12 +197,37 @@ export default function SignUp() {
             />
 
             <div className="border-t pt-4 mt-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Address</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                Address & Location
+              </h3>
+
+              <div className="mb-3 p-3 bg-blue-50 rounded-lg">
+                <button
+                  type="button"
+                  onClick={handleGetLocation}
+                  disabled={locationStatus === "loading"}
+                  className={`w-full px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
+                    locationStatus === "success"
+                      ? "bg-green-500 text-white"
+                      : locationStatus === "error"
+                        ? "bg-red-500 text-white"
+                        : "bg-blue-500 text-white hover:bg-blue-600"
+                  }`}
+                >
+                  <MapPin size={16} />
+                  {locationStatus === "loading"
+                    ? "Getting location..."
+                    : locationStatus === "success"
+                      ? `✓ Location set (${formData.address.latitude?.toFixed(4)}, ${formData.address.longitude?.toFixed(4)})`
+                      : "Get My Location"}
+                </button>
+              </div>
+
               <Input
                 label="Street Address"
                 name="address.street"
                 type="text"
-                placeholder="123 Main Street"
+                placeholder="Drivertole Chowk"
                 value={formData.address.street}
                 onChange={handleChange}
               />
@@ -157,7 +237,7 @@ export default function SignUp() {
                   label="City"
                   name="address.city"
                   type="text"
-                  placeholder="New York"
+                  placeholder="Butwal"
                   value={formData.address.city}
                   onChange={handleChange}
                 />
@@ -166,7 +246,7 @@ export default function SignUp() {
                   label="State"
                   name="address.state"
                   type="text"
-                  placeholder="NY"
+                  placeholder="Lumbini"
                   value={formData.address.state}
                   onChange={handleChange}
                 />
@@ -176,25 +256,24 @@ export default function SignUp() {
                 label="Zip Code"
                 name="address.zipCode"
                 type="text"
-                placeholder="10001"
+                placeholder="32500"
                 value={formData.address.zipCode}
                 onChange={handleChange}
                 className="mt-3"
               />
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full"
-            >
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Creating Account..." : "Sign Up"}
             </Button>
           </form>
 
           <p className="text-center text-gray-600 mt-6">
             Already have an account?{" "}
-            <Link to="/login" className="text-pink-600 font-semibold hover:underline">
+            <Link
+              to="/login"
+              className="text-pink-600 font-semibold hover:underline"
+            >
               Login
             </Link>
           </p>

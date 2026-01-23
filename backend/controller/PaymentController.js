@@ -8,7 +8,6 @@ const KHALTI_SECRET_KEY = process.env.KHALTI_LIVE_SECRET_KEY;
 const KHALTI_API_URL = "https://dev.khalti.com/api/v2"; // Use dev for sandbox
 const MERCHANT_USERNAME = "rentit"; // You may need to change this
 const WEBSITE_URL = process.env.WEBSITE_URL || "http://localhost:5173";
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
 
 // Initiate Khalti payment
 export const initiateKhaltiPayment = async (req, res) => {

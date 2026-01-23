@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button, Input, Alert, Card } from "../../components/common/UIComponents";
 
 export default function ForgotPassword() {
@@ -11,8 +11,9 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+  const API_BASE_URL = import.meta.env.VITE_API_BACKEND_URL || 'http://localhost:3000/api';
 
   const handleRequestCode = async (e) => {
     e.preventDefault();
@@ -41,8 +42,7 @@ export default function ForgotPassword() {
       });
       setSuccess("Password reset successfully. You can now login.");
       setTimeout(() => {
-        // redirected by link or user action, or auto redirect?
-        // navigate('/login')
+        navigate('/login');
       }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to reset password");
