@@ -13,7 +13,7 @@ export default function ForgotPassword() {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
-  const API_BASE_URL = import.meta.env.VITE_API_BACKEND_URL || 'http://localhost:3000/api';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
   const handleRequestCode = async (e) => {
     e.preventDefault();

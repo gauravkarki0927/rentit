@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
 
   // Correct API Base URL - defaults to localhost:5000
   const API_BASE_URL =
-    import.meta.env.VITE_API_BACKEND_URL || "http://localhost:3000/api";
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
   // Setup axios instance with correct base URL and CORS
   useEffect(() => {
@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
             JSON.stringify({
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
-            })
+            }),
           );
         },
         (error) => {
@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
           if (savedLocation) {
             setUserLocation(JSON.parse(savedLocation));
           }
-        }
+        },
       );
     }
   }, []);
@@ -63,10 +63,20 @@ export function AuthProvider({ children }) {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (res.data.success) setUser(res.data.user);
+      if (res.data.success) {
+        setUser(res.data.user);
+      }
     } catch (error) {
-      console.error("Error fetching profile:", error);
-      logout();
+      // Only logout if it's an authentication error (401)
+      // Don't logout for other errors or verification-related issues
+      if (error.response?.status === 401) {
+        console.error("Authentication failed:", error);
+        logout();
+      } else {
+        console.warn("Error fetching profile:", error);
+        // Keep the user logged in even if there's a network error
+        // User state will be maintained from login response
+      }
     } finally {
       setLoading(false);
     }
@@ -75,11 +85,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-      fetchProfile();
+      // Only fetch profile if we don't have user data yet
+      if (!user) {
+        fetchProfile();
+      } else {
+        // User already loaded, just mark loading as false
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
-  }, [token, fetchProfile]);
+  }, [token]);
 
   const login = async (email, password) => {
     try {
@@ -113,8 +129,8 @@ export function AuthProvider({ children }) {
     email,
     password,
     confirmPassword,
-    userType = "both",
-    address = {}
+    userType = "tenant",
+    address = {},
   ) => {
     try {
       setLoading(true);
@@ -123,7 +139,6 @@ export function AuthProvider({ children }) {
         return { success: false, message: "Passwords do not match" };
       }
 
-      // Include user location in registration
       const registrationData = {
         name,
         email,
@@ -131,7 +146,6 @@ export function AuthProvider({ children }) {
         userType,
         address: {
           ...address,
-          // Add geolocation if available
           latitude: userLocation?.latitude,
           longitude: userLocation?.longitude,
         },
@@ -140,12 +154,9 @@ export function AuthProvider({ children }) {
       const res = await axios.post(`/auth/register`, registrationData);
 
       if (res.data.success) {
-        setUser(res.data.user);
-        setToken(res.data.token);
-        localStorage.setItem("authToken", res.data.token);
-        axios.defaults.headers.common.Authorization = `Bearer ${res.data.token}`;
-        return { success: true, message: "Registration successful" };
+        return { success: true, message: res.data.message };
       }
+
       return {
         success: false,
         message: res.data.message || "Registration failed",
@@ -183,6 +194,13 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const setAuthData = (user, token) => {
+    setUser(user);
+    setToken(token);
+    localStorage.setItem("authToken", token);
+    axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -190,11 +208,12 @@ export function AuthProvider({ children }) {
         token,
         loading,
         userLocation,
-        isAuthenticated: !!user,
+        isAuthenticated: !!token,
         login,
         register,
         logout,
         updateProfile,
+        setAuthData,
       }}
     >
       {children}

@@ -12,7 +12,7 @@ export default function VerifyEmail() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const API_BASE_URL = import.meta.env.VITE_API_BACKEND_URL || 'http://localhost:3000/api';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,7 +69,7 @@ export default function VerifyEmail() {
             placeholder="Enter 6-digit code"
           />
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Verifying..." : "Verify Email"}
+            {loading ? "Verifying..." : "Verify OTP"}
           </Button>
         </form>
       </Card>

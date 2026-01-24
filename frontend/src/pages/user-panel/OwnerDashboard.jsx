@@ -20,9 +20,8 @@ export default function OwnerDashboard() {
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-  const API_BASE_URL = `${BACKEND_URL}/api`;
+  const API_BASE_URL =
+    import.meta.env.VITE_BASE_API_URL || "http://localhost:3000/api";
 
   useEffect(() => {
     if (activeTab === "uploaded") {

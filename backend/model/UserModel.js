@@ -66,6 +66,8 @@ const UserSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    emailVerificationCode: String,
+    emailVerificationExpire: Date,
     verificationToken: String,
     verificationExpires: Date,
     resetPasswordToken: String,

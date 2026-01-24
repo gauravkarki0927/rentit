@@ -191,15 +191,14 @@ export default function Header() {
           <div className="mt-4 md:mt-0 md:ml-4 flex flex-col md:flex-row gap-2">
             {isAuthenticated ? (
               <>
-                {user?.role === "admin" && (
+                {user?.role === "admin" ? (
                   <Link
                     to="/admin"
                     className="flex items-center gap-2 py-2 px-3 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded transition-colors font-semibold"
                   >
                     ⚙️ Admin Panel
                   </Link>
-                )}
-                {(user?.userType === "owner" || user?.userType === "both") && (
+                ) : user?.userType === "owner" ? (
                   <Link
                     to="/owner-dashboard"
                     className="flex items-center gap-2 py-2 px-3 bg-pink-50 text-pink-600 hover:bg-pink-100 rounded transition-colors"
@@ -207,8 +206,7 @@ export default function Header() {
                     <User size={18} />
                     {user?.name}
                   </Link>
-                )}
-                {user?.userType === "tenant" && (
+                ) : (
                   <Link
                     to="/tenant-dashboard"
                     className="flex items-center gap-2 py-2 px-3 bg-pink-50 text-pink-600 hover:bg-pink-100 rounded transition-colors"
@@ -217,6 +215,7 @@ export default function Header() {
                     {user?.name}
                   </Link>
                 )}
+
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 py-2 px-3 bg-red-50 text-red-600 hover:bg-red-100 rounded transition-colors"

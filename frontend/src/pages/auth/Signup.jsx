@@ -113,13 +113,12 @@ export default function SignUp() {
     );
 
     if (result.success) {
-      successToast("Account created successfully!");
-      navigate("/login");
+      successToast("Data Submitted successfully!");
+      navigate(`/verify-signup?email=${formData.email}`);
     } else {
       errorToast(result.message || "Something went wrong!");
       setErrors({ submit: result.message });
     }
-    setErrors({ submit: result.message });
     setLoading(false);
   };
 

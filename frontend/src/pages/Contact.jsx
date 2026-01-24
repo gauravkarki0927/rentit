@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { Alert, Button } from '../components/common/UIComponents';
+import { errorToast, successToast } from '../utils/toast';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -12,25 +13,44 @@ export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setSubmitted(true);
-      setFormData({ name: '', email: '', subject: '', message: '' });
-      setLoading(false);
-      
-      // Hide success message after 5 seconds
-      setTimeout(() => setSubmitted(false), 5000);
-    }, 1000);
-  };
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/email/contact`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || 'Something went wrong');
+    }
+
+    setSubmitted(true);
+    successToast('Message sent successfully!');
+    setFormData({ name: '', email: '', subject: '', message: '' });
+
+    setTimeout(() => setSubmitted(false), 5000);
+  } catch (error) {
+    errorToast(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50 py-12">

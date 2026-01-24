@@ -236,6 +236,33 @@ class EmailService {
     return this._logEmail(emailContent);
   }
 
+    /**
+   * Send contact form email to admin
+   */
+    static async sendContactEmailToAdmin(email, name, subject, message) {
+    const emailContent = {
+      to: email,
+      subject: `RENTIT - Re: ${subject}`,
+      message: `
+        Hello ${name},
+        
+        Thank you for contacting RENTIT. We have received your message and will respond within 24 hours.
+        
+        Your Message:
+        ${message}
+        
+        Reference ID: ${this._generateRefId()}
+        
+        If your matter is urgent, please call us at +977-1-XXXX-XXXX
+        
+        Best regards,
+        RENTIT Support Team
+      `,
+    };
+
+    return this._logEmail(emailContent);
+  }
+
   /**
    * Send contact form response email
    */

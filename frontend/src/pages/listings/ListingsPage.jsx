@@ -130,8 +130,8 @@ export default function ListingsPage() {
             },
           });
 
-          if (response.data.success && Array.isArray(response.data.posts)) {
-            setListings(response.data.posts);
+          if (response.data.success && Array.isArray(response.data.listings)) {
+            setListings(response.data.listings);
           } else {
             setListings([]);
             setError("No listings found nearby");

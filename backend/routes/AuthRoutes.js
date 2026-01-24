@@ -5,7 +5,8 @@ import {
   getProfile, 
   updateProfile, 
   forgotPassword, 
-  resetPassword 
+  resetPassword, 
+  verifysignup
 } from "../controller/AuthController.js";
 import { protect } from "../middleware/auth.js";
 import { uploadProfile } from "../config/multer.js";
@@ -15,6 +16,7 @@ const router = express.Router();
 // ... (swagger docs for register/login/me remain) ...
 
 router.post("/register", register);
+router.post("/verify-signup", verifysignup);
 router.post("/login", login);
 router.get("/me", protect, getProfile);
 router.put("/me", protect, uploadProfile.single('profileImage'), updateProfile);

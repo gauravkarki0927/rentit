@@ -12,7 +12,7 @@ import axios from "axios";
 import { useEffect, useCallback } from "react";
 
 export default function UserDashboard() {
-  const { user, logout, updateProfile, token } = useAuth();
+  const { user, updateProfile, token } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
@@ -31,7 +31,7 @@ export default function UserDashboard() {
   });
 
   const API_BASE_URL =
-    import.meta.env.VITE_API_BACKEND_URL || "http://localhost:3000/api";
+    import.meta.env.VITE_BASE_API_URL || "http://localhost:3000/api";
 
   // Fetch user's applied applications instead of listings
   const fetchUserApplications = useCallback(async () => {
@@ -188,7 +188,10 @@ export default function UserDashboard() {
               <Card>
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">
-                    My Profile {user?.userType === "owner" || user?.userType === "both" ? "(Owner)" : "(Tenant)"}
+                    My Profile{" "}
+                    {user?.userType === "owner" || user?.userType === "both"
+                      ? "(Owner)"
+                      : "(Tenant)"}
                   </h2>
                   <Button
                     variant={isEditing ? "secondary" : "primary"}

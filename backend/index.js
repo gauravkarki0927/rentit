@@ -43,6 +43,7 @@ import ApplicationRouter from "./routes/ApplicationRoutes.js";
 import PaymentRouter from "./routes/PaymentRoutes.js";
 import ReviewRouter from "./routes/ReviewRoutes.js";
 import RoomPaymentRouter from "./routes/RoomPaymentRoutes.js";
+import EmailRouter from "./routes/EmailRoutes.js";
 
 // API Routes
 app.use('/api/auth', AuthRouter);
@@ -52,6 +53,7 @@ app.use('/api/applications', ApplicationRouter);
 app.use('/api/payments', PaymentRouter);
 app.use('/api/room-payments', RoomPaymentRouter);
 app.use('/api/reviews', ReviewRouter);
+app.use('/api/email', EmailRouter);
 
 // Static files for uploads
 app.use('/uploads', express.static('uploads'));
