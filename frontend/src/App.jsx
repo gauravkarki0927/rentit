@@ -12,7 +12,6 @@ import ListingsPage from "./pages/listings/ListingsPage";
 import ListingDetail from "./pages/listings/ListingDetail";
 import CreateListing from "./pages/listings/CreateListing";
 import EditListing from "./pages/listings/EditListing";
-import UserDashboard from "./pages/user-panel/User-DashBoard";
 import Homepage from "./pages/landing-page/Homepage";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -27,6 +26,9 @@ import OwnerDashboard from "./pages/user-panel/OwnerDashboard";
 import { ToastContainer } from "react-toastify";
 import Login from "./pages/auth/login";
 import VerifySignup from "./pages/auth/VerifySignup";
+import TenantDashboard from "./pages/user-panel/Tenant-DashBoard";
+import EditApplication from "./pages/listings/EditApplication";
+import ApplicationDetails from "./pages/listings/ApplicationDetails";
 
 // Protected Route Component
 function ProtectedRoute({ children, requireAdmin = false }) {
@@ -78,7 +80,7 @@ function AppContent() {
           path="/tenant-dashboard"
           element={
             <ProtectedRoute>
-              <UserDashboard />
+              <TenantDashboard />
             </ProtectedRoute>
           }
         />
@@ -106,6 +108,24 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <ApplicationForm />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/application-details/:id"
+          element={
+            <ProtectedRoute>
+              <ApplicationDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/edit-application/:id"
+          element={
+            <ProtectedRoute>
+              <EditApplication />
             </ProtectedRoute>
           }
         />

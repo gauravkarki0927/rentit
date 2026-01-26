@@ -7,17 +7,27 @@ import {
   Input,
   Alert,
 } from "../../components/common/UIComponents";
-import { User, Settings, LogOut, Plus, Edit2, Trash2 } from "lucide-react";
+import {
+  User,
+  Settings,
+  LogOut,
+  Eye,
+  Plus,
+  Edit2,
+  Trash2,
+  History,
+} from "lucide-react";
 import axios from "axios";
 import { useEffect, useCallback } from "react";
 
-export default function UserDashboard() {
+export default function TenantDashboard() {
   const { user, updateProfile, token } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState("");
-  const [userListings, setUserListings] = useState([]);
+  const [pendingApps, setPendingApps] = useState([]);
+  const [historyApps, setHistoryApps] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -33,49 +43,7 @@ export default function UserDashboard() {
   const API_BASE_URL =
     import.meta.env.VITE_BASE_API_URL || "http://localhost:3000/api";
 
-  // Fetch user's applied applications instead of listings
-  const fetchUserApplications = useCallback(async () => {
-    try {
-      setListingsLoading(true);
-      const response = await axios.get(
-        `${API_BASE_URL}/applications/my-applications`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      if (response.data.success) {
-        setUserListings(response.data.applications || []);
-      }
-    } catch (error) {
-      console.error("Error fetching applications:", error);
-      // If endpoint doesn't exist, fetch all and filter by current user
-      try {
-        const postsResponse = await axios.get(`${API_BASE_URL}/posts`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUserListings(postsResponse.data.posts || []);
-      } catch (err) {
-        setMessage({
-          type: "error",
-          text: err.response?.data?.message || "Failed to fetch applications",
-        });
-      }
-    } finally {
-      setListingsLoading(false);
-    }
-  }, [token, API_BASE_URL]);
-
-  useEffect(() => {
-    if (activeTab === "listings") {
-      fetchUserApplications();
-    }
-  }, [activeTab, fetchUserApplications]);
-
+  const allowActions = true; // You can set conditions here if needed
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name.includes("address.")) {
@@ -101,10 +69,12 @@ export default function UserDashboard() {
     setTimeout(() => setMessage(""), 3000);
   };
 
-  const deleteListing = async (listingId) => {
+  const fetchApplications = useCallback(async () => {
     try {
-      const response = await axios.delete(
-        `${API_BASE_URL}/posts/${listingId}`,
+      setListingsLoading(true);
+
+      const res = await axios.get(
+        `${API_BASE_URL}/applications/my-applications`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -112,18 +82,38 @@ export default function UserDashboard() {
         },
       );
 
-      if (response.data.success) {
-        setUserListings(
-          userListings.filter((listing) => listing._id !== listingId),
-        );
-        setMessage({ type: "success", text: "Listing deleted successfully!" });
-        setTimeout(() => setMessage(""), 3000);
-      }
-    } catch (error) {
+      const apps = res.data.applications || [];
+
+      setPendingApps(apps.filter((app) => app.status === "pending"));
+      setHistoryApps(apps.filter((app) => app.status !== "pending"));
+    } catch (err) {
       setMessage({
         type: "error",
-        text: error.response?.data?.message || "Failed to delete listing",
+        text: err.response?.data?.message || "Failed to fetch applications",
       });
+    } finally {
+      setListingsLoading(false);
+    }
+  }, [token, API_BASE_URL]);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  const deleteApplication = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this application?"))
+      return;
+
+    try {
+      await axios.delete(`${API_BASE_URL}/applications/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setPendingApps((prev) => prev.filter((a) => a._id !== id));
+
+      setMessage({ type: "success", text: "Application deleted successfully" });
+    } catch (err) {
+      setMessage({ type: "error", text: "Failed to delete application" });
     }
   };
 
@@ -153,7 +143,8 @@ export default function UserDashboard() {
               <nav className="space-y-2">
                 {[
                   { id: "profile", label: "My Profile", icon: User },
-                  { id: "listings", label: "My Listings", icon: Plus },
+                  { id: "applications", label: "My Applications", icon: Plus },
+                  { id: "app-history", label: "My History", icon: History },
                   { id: "settings", label: "Settings", icon: Settings },
                 ].map((item) => (
                   <button
@@ -316,87 +307,160 @@ export default function UserDashboard() {
               </Card>
             )}
 
-            {/* Listings Tab */}
-            {activeTab === "listings" && (
+            {/* Applications Tab */}
+            {activeTab === "applications" && (
               <Card>
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">
-                    My Listings
+                    My Application
                   </h2>
-                  <Button
-                    onClick={() => navigate("/create-listing")}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus size={18} />
-                    Create Listing
-                  </Button>
                 </div>
 
                 {listingsLoading ? (
                   <div className="text-center py-12">
-                    <p className="text-gray-600">Loading listings...</p>
+                    <p className="text-gray-600">Loading applications...</p>
                   </div>
-                ) : userListings.length === 0 ? (
+                ) : pendingApps.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-gray-600 mb-4">
-                      You haven't created any listings yet.
+                      You haven't subbmitted any applications yet.
                     </p>
-                    <Button onClick={() => navigate("/create-listing")}>
-                      Create Your First Listing
+                    <Button onClick={() => navigate("/listings")}>
+                      Apply Your First Renting Now
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {userListings.map((listing) => (
-                      <div
-                        key={listing._id}
-                        className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="flex-grow">
-                          <h3 className="font-semibold text-gray-900">
-                            {listing.name}
-                          </h3>
-                          <p className="text-sm text-gray-600 line-clamp-2">
-                            {listing.description}
-                          </p>
-                          <div className="flex gap-4 mt-2 text-sm">
-                            <span className="text-pink-600 font-semibold">
-                              Rs.{listing.price}/day
-                            </span>
-                            <span className="text-gray-500">
-                              {listing.category}
-                            </span>
-                            {listing.location?.city && (
-                              <span className="text-gray-500">
-                                {listing.location}
+                    {pendingApps.map((app) => (
+                      <div key={app._id} className="p-2">
+                        <div className="p-4 bg-gray-50 rounded-lg flex justify-between items-center">
+                          <div className="space-y-2">
+                            <h3 className="font-semibold text-gray-900">
+                              {app.roomId?.name || "Room not available"}
+                            </h3>
+
+                            <p className="text-sm text-gray-600">
+                              Price: Rs. {app.roomId?.price}
+                            </p>
+
+                            <p className="text-sm text-gray-600">
+                              Duration: {app.duration} • People: {app.people}
+                            </p>
+                            <p className="text-sm">
+                              Status:{" "}
+                              <span
+                                className={
+                                  app.status === "accepted"
+                                    ? "text-green-600 bg-gray-100 px-2 py-1 rounded"
+                                    : app.status === "rejected"
+                                      ? "text-red-600 bg-gray-100 px-2 py-1 rounded"
+                                      : "text-yellow-600 bg-gray-100 px-2 py-1 rounded"
+                                }
+                              >
+                                {app.status}
                               </span>
-                            )}
+                            </p>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                navigate(`/application-details/${app._id}`)
+                              }
+                            >
+                              <Eye size={16} />
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() =>
+                                navigate(`/edit-application/${app._id}`)
+                              }
+                            >
+                              <Edit2 size={16} />
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => deleteApplication(app._id)}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-2 items-center">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() =>
-                              navigate(`/edit-listing/${listing._id}`)
-                            }
-                          >
-                            <Edit2 size={16} />
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  "Are you sure you want to delete this listing?",
-                                )
-                              ) {
-                                deleteListing(listing._id);
+<div className="flex justify-end">
+  <p className="text-sm bg-green-500 text-white px-2 py-1 rounded">
+    {new Date(app.createdAt).toLocaleString()}
+  </p>
+</div>
+
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {activeTab === "app-history" && (
+              <Card>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    My Application History
+                  </h2>
+                </div>
+
+                {listingsLoading ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-600">Loading applications...</p>
+                  </div>
+                ) : historyApps.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-600 mb-4">
+                      Nothing to show in application history
+                    </p>
+                    <Button onClick={() => navigate("/listings")}>
+                      Apply Your Application Now
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {historyApps.map((app) => (
+                      <div
+                        key={app._id}
+                        className="p-4 bg-gray-50 rounded-lg flex justify-between items-center"
+                      >
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            Room ID: {app.roomId}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            Duration: {app.duration} • People: {app.people}
+                          </p>
+                          <p className="text-sm">
+                            Status:{" "}
+                            <span
+                              className={
+                                app.status === "accepted"
+                                  ? "text-green-600"
+                                  : app.status === "rejected"
+                                    ? "text-red-600"
+                                    : "text-yellow-600"
                               }
-                            }}
+                            >
+                              {app.status}
+                            </span>
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/applications/${app._id}`)}
                           >
-                            <Trash2 size={16} />
+                            <Eye size={16} />
                           </Button>
                         </div>
                       </div>

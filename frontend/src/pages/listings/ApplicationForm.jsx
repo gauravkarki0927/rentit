@@ -116,65 +116,6 @@ export default function ApplicationForm() {
     }
   };
 
-  const handleInitiatePayment = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const paymentAmount = listing?.price || roomPrice || 0;
-
-      if (paymentMethod === "khalti") {
-        // Call backend to initiate Khalti payment
-        const response = await axios.post(
-          `${API_BASE_URL}/payments/khalti/initiate`,
-          {
-            roomId: roomIdFromState,
-            ownerId,
-            applicationId,
-            amount: paymentAmount,
-          },
-          {
-            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
-          }
-        );
-
-        if (response.data.success && response.data.payment_url) {
-          setPaymentInitiated(true);
-          // Redirect to Khalti payment portal
-          window.location.href = response.data.payment_url;
-        } else {
-          setError("Failed to initiate Khalti payment");
-        }
-      } else {
-        // Cash payment - direct confirmation
-        const response = await axios.post(
-          `${API_BASE_URL}/payments`,
-          {
-            roomId: roomIdFromState,
-            ownerId,
-            applicationId,
-            amount: paymentAmount,
-            paymentMethod: "cash",
-          },
-          {
-            headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
-          }
-        );
-
-        if (response.data.success) {
-          setSuccess("Application and booking confirmed!");
-          setTimeout(() => {
-            navigate("/dashboard");
-          }, 2000);
-        }
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to process payment");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (error && !roomIdFromState) {
     return (
       <div className="min-h-screen flex justify-center items-center">
@@ -183,36 +124,18 @@ export default function ApplicationForm() {
     );
   }
 
-  const payableAmount = listing?.price || roomPrice || 0;
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div className={`flex-1 text-center pb-4 ${step >= 1 ? "text-blue-600" : "text-gray-400"}`}>
-              <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2 ${
-                step >= 1 ? "bg-blue-600 text-white" : "bg-gray-200"
-              }`}>
-                1
-              </div>
+            <div className="flex-1 text-center pb-4 text-blue-600">
               <p className="font-semibold">Application</p>
-            </div>
-            <div className={`flex-1 h-1 mb-6 ${step >= 2 ? "bg-blue-600" : "bg-gray-200"}`}></div>
-            <div className={`flex-1 text-center pb-4 ${step >= 2 ? "text-blue-600" : "text-gray-400"}`}>
-              <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2 ${
-                step >= 2 ? "bg-blue-600 text-white" : "bg-gray-200"
-              }`}>
-                2
-              </div>
-              <p className="font-semibold">Payment</p>
             </div>
           </div>
         </div>
 
-        {/* Step 1: Application Form */}
-        {step === 1 && (
           <Card className="p-8">
             <h2 className="text-2xl font-bold text-center mb-2">Rental Application</h2>
             <p className="text-center text-gray-600 mb-6">
@@ -315,115 +238,10 @@ export default function ApplicationForm() {
                 disabled={loading}
                 className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
               >
-                {loading ? "Processing..." : "Continue to Payment"}
+                {loading ? "Processing..." : "Submit Application"}
               </Button>
             </form>
           </Card>
-        )}
-
-        {/* Step 2: Payment */}
-        {step === 2 && (
-          <div className="space-y-6">
-            {/* Booking Summary */}
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">Booking Summary</h3>
-              <div className="space-y-3 border-b pb-4 mb-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Room</span>
-                  <span className="font-semibold">{roomName || "Selected Room"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tenant Name</span>
-                  <span className="font-semibold">{formData.userName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Duration</span>
-                  <span className="font-semibold">{formData.duration}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Number of Occupants</span>
-                  <span className="font-semibold">{formData.people}</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center pt-4">
-                <span className="text-lg font-bold">Monthly Rent</span>
-                <span className="text-2xl font-bold text-green-600">Rs. {payableAmount}</span>
-              </div>
-            </Card>
-
-            {/* Payment Method Selection */}
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">Payment Method</h3>
-              
-              <div className="space-y-3">
-                <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition" style={{borderColor: paymentMethod === "khalti" ? "#5B21B6" : "#E5E7EB"}}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="khalti"
-                    checked={paymentMethod === "khalti"}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-4 h-4"
-                  />
-                  <div className="ml-4 flex-1">
-                    <div className="flex items-center gap-2">
-                      <CreditCard size={20} className="text-purple-600" />
-                      <span className="font-semibold">Khalti Payment</span>
-                    </div>
-                    <p className="text-sm text-gray-600">Secure online payment via Khalti</p>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition" style={{borderColor: paymentMethod === "cash" ? "#5B21B6" : "#E5E7EB"}}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={paymentMethod === "cash"}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-4 h-4"
-                  />
-                  <div className="ml-4 flex-1">
-                    <div className="flex items-center gap-2">
-                      <FileText size={20} className="text-gray-600" />
-                      <span className="font-semibold">Manual Confirmation</span>
-                    </div>
-                    <p className="text-sm text-gray-600">Payment will be arranged directly with owner</p>
-                  </div>
-                </label>
-              </div>
-
-              {paymentMethod === "khalti" && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex gap-3">
-                  <AlertCircle className="text-blue-600 flex-shrink-0" size={20} />
-                  <p className="text-sm text-blue-800">
-                    You will be redirected to Khalti's secure payment gateway. Your payment will be verified and your booking confirmed.
-                  </p>
-                </div>
-              )}
-            </Card>
-
-            {error && <Alert type="error" message={error} />}
-            {success && <Alert type="success" message={success} />}
-
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <Button
-                onClick={() => setStep(1)}
-                className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition"
-              >
-                Back
-              </Button>
-              <Button
-                onClick={handleInitiatePayment}
-                disabled={loading || paymentInitiated}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {loading ? "Processing..." : `Pay Rs. ${payableAmount} & Confirm`}
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
