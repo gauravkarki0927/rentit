@@ -43,7 +43,7 @@ export default function VerifySignup() {
         // Navigate to dashboard after short delay to show success message
         setTimeout(() => {
           navigate(
-            response.data.user.userType === "admin"
+            response.data.user.role === "admin"
               ? "/admin"
               : response.data.user.userType === "owner"
                 ? "/owner-dashboard"

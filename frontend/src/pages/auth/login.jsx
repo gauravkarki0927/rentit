@@ -12,25 +12,9 @@ export default function Login() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [loginSuccess, setLoginSuccess] = useState(false);
-  const { login, user } = useAuth();
-  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
-
-  // Handle redirect after successful login
-  useEffect(() => {
-    if (loginSuccess && user) {
-      if (user.role === "admin") {
-        navigate("/admin", { replace: true });
-      } else if (user.userType === "owner") {
-        navigate("/owner-dashboard", { replace: true });
-      } else {
-        navigate("/tenant-dashboard", { replace: true });
-      }
-      setLoginSuccess(false);
-    }
-  }, [loginSuccess, user, navigate]);
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -59,17 +43,16 @@ export default function Login() {
     }
 
     setLoading(true);
-    const result = await login(formData.email, formData.password);
 
-    if (result.success === true) {
-      successToast("Login successful");
-      setLoginSuccess(true);
-    } else {
-      setErrors({ submit: result.message });
-      errorToast(result.message || "Something went wrong!");
+    try {
+      const result = await login(formData.email, formData.password);
+      if (result) {
+        setLoading(false);
+      }
+    } catch (error) {
+      errorToast("An unexpected error occurred. Please try again.");
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

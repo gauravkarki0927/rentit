@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { AuthContext } from "./auth.context";
+import { useNavigate } from "react-router-dom";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("authToken"));
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
+  const navigate = useNavigate();
+
 
   // Correct API Base URL - defaults to localhost:5000
   const API_BASE_URL =
@@ -107,11 +110,17 @@ export function AuthProvider({ children }) {
       if (res.data.success) {
         setUser(res.data.user);
         setToken(res.data.token);
+        console.log(res.data.user);
         localStorage.setItem("authToken", res.data.token);
         axios.defaults.headers.common.Authorization = `Bearer ${res.data.token}`;
-        return { success: true, message: "Login successful" };
+        if (res.data.user.role === "admin") {
+          return navigate("/admin", { replace: true });
+        } else if (res.data.user.userType === "owner") {
+          return navigate("/owner-dashboard", { replace: true });
+        } else {
+          return navigate("/tenant-dashboard", { replace: true });
+        }
       }
-      return { success: false, message: res.data.message || "Login failed" };
     } catch (error) {
       const message =
         error.response?.data?.message ||

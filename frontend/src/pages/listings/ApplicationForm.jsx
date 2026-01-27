@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { Button, Input, Alert, Card } from "../../components/common/UIComponents";
+import {
+  Button,
+  Input,
+  Alert,
+  Card,
+} from "../../components/common/UIComponents";
 import { useAuth } from "../../context/useAuth";
 import { CreditCard, FileText, AlertCircle } from "lucide-react";
 
@@ -10,7 +15,7 @@ export default function ApplicationForm() {
   const navigate = useNavigate();
   const { roomId } = useParams();
   const { user } = useAuth();
-  
+
   // Get room info from location state or params
   const roomIdFromState = location.state?.roomId || roomId;
   const ownerId = location.state?.ownerId;
@@ -48,7 +53,7 @@ export default function ApplicationForm() {
       setError("Invalid room details. Please select a room first.");
       return;
     }
-    
+
     // Fetch listing details
     fetchListing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -56,7 +61,9 @@ export default function ApplicationForm() {
 
   const fetchListing = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/posts/${roomIdFromState}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/posts/${roomIdFromState}`,
+      );
       if (response.data.success) {
         setListing(response.data.post);
       }
@@ -95,19 +102,26 @@ export default function ApplicationForm() {
           ...formData,
         },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
-        }
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        },
       );
 
       if (response.data.success) {
         setApplicationId(response.data.application._id);
-        setSuccess("Application submitted! Proceeding to payment...");
-        
-        // Move to payment step
-        setTimeout(() => {
-          setStep(2);
-          setSuccess("");
-        }, 1500);
+        setSuccess("Application submitted!");
+
+        if (user.role === "admin") {
+          navigate("/admin");
+          return;
+        } else if (user.userType === "owner") {
+          navigate("/owner-dashboard");
+          return;
+        } else {
+          navigate("/tenant-dashboard");
+          return;
+        }   
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to submit application");
@@ -136,112 +150,119 @@ export default function ApplicationForm() {
           </div>
         </div>
 
-          <Card className="p-8">
-            <h2 className="text-2xl font-bold text-center mb-2">Rental Application</h2>
-            <p className="text-center text-gray-600 mb-6">
-              Applying for: <span className="font-semibold">{roomName || "Selected Room"}</span>
-            </p>
+        <Card className="p-8">
+          <h2 className="text-2xl font-bold text-center mb-2">
+            Rental Application
+          </h2>
+          <p className="text-center text-gray-600 mb-6">
+            Applying for:{" "}
+            <span className="font-semibold">{roomName || "Selected Room"}</span>
+          </p>
 
-            {error && <Alert type="error" message={error} />}
-            {success && <Alert type="success" message={success} />}
+          {error && <Alert type="error" message={error} />}
+          {success && <Alert type="success" message={success} />}
 
-            <form onSubmit={handleSubmitApplication} className="space-y-6">
-              {/* Personal Information */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Full Name"
-                    name="userName"
-                    value={formData.userName}
-                    onChange={handleChange}
-                    required
-                  />
-                  <Input
-                    label="Email"
-                    name="userEmail"
-                    type="email"
-                    value={formData.userEmail}
-                    onChange={handleChange}
-                    required
-                  />
-                  <Input
-                    label="Phone"
-                    name="userPhone"
-                    value={formData.userPhone}
-                    onChange={handleChange}
-                    required
-                  />
-                  <Input
-                    label="Number of People"
-                    name="people"
-                    type="number"
-                    min="1"
-                    value={formData.people}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Duration */}
-              <div>
-                <label className="block text-sm font-semibold mb-2">Duration of Stay</label>
-                <select
-                  name="duration"
-                  value={formData.duration}
+          <form onSubmit={handleSubmitApplication} className="space-y-6">
+            {/* Personal Information */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">
+                Personal Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Full Name"
+                  name="userName"
+                  value={formData.userName}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
                   required
-                >
-                  <option value="1 month">1 Month</option>
-                  <option value="3 months">3 Months</option>
-                  <option value="6 months">6 Months</option>
-                  <option value="1 year">1 Year</option>
-                  <option value="2 years">2 Years</option>
-                </select>
+                />
+                <Input
+                  label="Email"
+                  name="userEmail"
+                  type="email"
+                  value={formData.userEmail}
+                  onChange={handleChange}
+                  required
+                />
+                <Input
+                  label="Phone"
+                  name="userPhone"
+                  value={formData.userPhone}
+                  onChange={handleChange}
+                  required
+                />
+                <Input
+                  label="Number of People"
+                  name="people"
+                  type="number"
+                  min="1"
+                  value={formData.people}
+                  onChange={handleChange}
+                  required
+                />
               </div>
+            </div>
 
-              {/* Current Address */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Current Address</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="State"
-                    name="address.state"
-                    value={formData.address.state}
-                    onChange={handleChange}
-                  />
-                  <Input
-                    label="District/City"
-                    name="address.district"
-                    value={formData.address.district}
-                    onChange={handleChange}
-                  />
-                  <Input
-                    label="Street"
-                    name="address.street"
-                    value={formData.address.street}
-                    onChange={handleChange}
-                  />
-                  <Input
-                    label="Postal Code"
-                    name="address.postal"
-                    value={formData.address.postal}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+            {/* Duration */}
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Duration of Stay
+              </label>
+              <select
+                name="duration"
+                value={formData.duration}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                required
               >
-                {loading ? "Processing..." : "Submit Application"}
-              </Button>
-            </form>
-          </Card>
+                <option value="1 month">1 Month</option>
+                <option value="3 months">3 Months</option>
+                <option value="6 months">6 Months</option>
+                <option value="1 year">1 Year</option>
+                <option value="2 years">2 Years</option>
+              </select>
+            </div>
+
+            {/* Current Address */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Current Address</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="State"
+                  name="address.state"
+                  value={formData.address.state}
+                  onChange={handleChange}
+                />
+                <Input
+                  label="District/City"
+                  name="address.district"
+                  value={formData.address.district}
+                  onChange={handleChange}
+                />
+                <Input
+                  label="Street"
+                  name="address.street"
+                  value={formData.address.street}
+                  onChange={handleChange}
+                />
+                <Input
+                  label="Postal Code"
+                  name="address.postal"
+                  value={formData.address.postal}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+            >
+              {loading ? "Processing..." : "Submit Application"}
+            </Button>
+          </form>
+        </Card>
       </div>
     </div>
   );

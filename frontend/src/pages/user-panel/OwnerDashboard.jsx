@@ -111,13 +111,13 @@ export default function OwnerDashboard() {
         {/* Tabs */}
         <div
           className="
-  flex flex-col
-  sm:flex-col
-  md:grid md:grid-cols-2
-  lg:flex lg:flex-row
-  gap-3 sm:gap-4
-  mb-6
-"
+          flex flex-col
+          sm:flex-col
+          md:grid md:grid-cols-2
+          lg:flex lg:flex-row
+          gap-3 sm:gap-4
+          mb-6
+        "
         >
           <button
             onClick={() => navigate("/create-listing")}
@@ -188,9 +188,13 @@ export default function OwnerDashboard() {
                   const images =
                     post.images && post.images.length > 0
                       ? post.images.map((img) =>
-                          img.startsWith("http") ? img : `${BACKEND_URL}${img}`,
+                          img.startsWith("http")
+                            ? img
+                            : `${import.meta.env.VITE_IMAGE_BASE_URL || "http://localhost:3000"}${img}`,
                         )
-                      : [`${BACKEND_URL}/uploads/placeholder-listing.jpg`];
+                      : [
+                          `${import.meta.env.VITE_IMAGE_BASE_URL}/uploads/placeholder-listing.jpg`,
+                        ];
 
                   const safeIndex = currentImageIndex % images.length;
 

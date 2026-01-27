@@ -33,7 +33,8 @@ export default function ListingDetail() {
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
   useEffect(() => {
     fetchListingDetail();
@@ -132,9 +133,13 @@ export default function ListingDetail() {
   const images =
     listing.images && listing.images.length > 0
       ? listing.images.map((img) =>
-          img.startsWith("http") ? img : `${BACKEND_URL}${img}`,
+          img.startsWith("http")
+            ? img
+            : `${import.meta.env.VITE_IMAGE_BASE_URL || "http://localhost:3000"}${img}`,
         )
-      : [`${BACKEND_URL}/uploads/placeholder-listing.jpg`];
+      : [
+          `${import.meta.env.VITE_IMAGE_BASE_URL || "http://localhost:3000"}/uploads/placeholder-listing.jpg`,
+        ];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -367,6 +372,16 @@ export default function ListingDetail() {
                   />
                   <p className="text-gray-600 font-medium">
                     This is your listing
+                  </p>
+                </div>
+              ) : user?.userType === "owner" ? (
+                <div className="bg-gray-50 p-4 rounded-lg text-center">
+                  <AlertCircle
+                    className="mx-auto mb-2 text-gray-400"
+                    size={32}
+                  />
+                  <p className="text-gray-600 font-medium">
+                    Owner Account is not authorized to apply for listings
                   </p>
                 </div>
               ) : (

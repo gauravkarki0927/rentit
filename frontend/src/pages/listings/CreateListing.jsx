@@ -352,7 +352,7 @@ export default function CreateListing() {
                   name="price"
                   type="number"
                   placeholder="2500"
-                  step="50"
+                  step="1"
                   min="1000"
                   value={formData.price}
                   onChange={handleInputChange}

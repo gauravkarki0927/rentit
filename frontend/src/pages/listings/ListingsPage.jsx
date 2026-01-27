@@ -391,7 +391,7 @@ export default function ListingsPage() {
                       </button>
                       {isAuthenticated && (
                         <button
-                          disabled={user?._id === listing.userId?._id} // directly check here
+                          disabled={user?._id === listing.userId?._id || user?.userType === "owner"} // directly check here
                           onClick={() =>
                             navigate(`/apply/${listing._id}`, {
                               state: {
@@ -402,7 +402,7 @@ export default function ListingsPage() {
                             })
                           }
                           className={`flex-1 border border-pink-600 text-pink-600 py-2 rounded-lg transition-colors font-medium ${
-                            user?._id === listing.userId?._id
+                            user?._id === listing.userId?._id || user?.userType === "owner"
                               ? "opacity-50 cursor-not-allowed"
                               : "hover:bg-pink-50"
                           }`}
