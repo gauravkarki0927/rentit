@@ -7,6 +7,11 @@ import {
   deleteUserByAdmin,
   deleteListingByAdmin,
   getDashboardStats,
+  updateUserStatus,
+  updateUserRole,
+  updateListingStatus,
+  getAllPayments,
+  getAllApplications,
 } from "../controller/AdminController.js";
 
 const AdminRouter = express.Router();
@@ -128,5 +133,50 @@ AdminRouter.delete("/user/:userId", deleteUserByAdmin);
  *         description: Listing deleted successfully
  */
 AdminRouter.delete("/listing/:listingId", deleteListingByAdmin);
+
+/**
+ * @swagger
+ * /api/admin/user/{userId}/status:
+ *   patch:
+ *     summary: Update user status
+ *     tags: [Admin]
+ */
+AdminRouter.patch("/user/:userId/status", updateUserStatus);
+
+/**
+ * @swagger
+ * /api/admin/user/{userId}/role:
+ *   patch:
+ *     summary: Update user role
+ *     tags: [Admin]
+ */
+AdminRouter.patch("/user/:userId/role", updateUserRole);
+
+/**
+ * @swagger
+ * /api/admin/listing/{listingId}/status:
+ *   patch:
+ *     summary: Update listing status
+ *     tags: [Admin]
+ */
+AdminRouter.patch("/listing/:listingId/status", updateListingStatus);
+
+/**
+ * @swagger
+ * /api/admin/payments:
+ *   get:
+ *     summary: Get all payments
+ *     tags: [Admin]
+ */
+AdminRouter.get("/payments", getAllPayments);
+
+/**
+ * @swagger
+ * /api/admin/applications:
+ *   get:
+ *     summary: Get all applications
+ *     tags: [Admin]
+ */
+AdminRouter.get("/applications", getAllApplications);
 
 export default AdminRouter;
