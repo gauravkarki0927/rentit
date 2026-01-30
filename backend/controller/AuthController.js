@@ -355,6 +355,39 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const kycUpload = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please upload a document" });
+    }
+
+    const relativePath = req.file.path.replace(/\\/g, "/");
+    const kycPath = relativePath.startsWith("uploads")
+      ? "/" + relativePath
+      : relativePath;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        kycDocument: kycPath,
+        kycStatus: "pending",
+        kycSubmittedAt: new Date(),
+      },
+      { new: true },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "KYC document submitted successfully",
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export {
   register,
   verifysignup,
@@ -363,4 +396,5 @@ export {
   updateProfile,
   forgotPassword,
   resetPassword,
+  kycUpload,
 };

@@ -7,11 +7,22 @@ import {
   Alert,
   Button,
 } from "../../components/common/UIComponents";
-import { Edit2, Trash2, Eye, DollarSign } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  ShieldAlert,
+  Upload,
+  FileCheck,
+  Edit2,
+  Trash2,
+  Eye,
+  DollarSign,
+} from "lucide-react";
 
 export default function OwnerDashboard() {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("uploaded"); // uploaded, applications
   const [uploadedPosts, setUploadedPosts] = useState([]);
@@ -20,16 +31,42 @@ export default function OwnerDashboard() {
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [kycFile, setKycFile] = useState(null);
+  const [uploadingKyc, setUploadingKyc] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [searchParams] = useSearchParams();
+  const [success, setSuccess] = useState("");
   const API_BASE_URL =
-    import.meta.env.VITE_BASE_API_URL || "http://localhost:3000/api";
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
   useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchProfile();
     if (activeTab === "uploaded") {
       fetchUploadedPosts();
-    } else {
+    } else if (activeTab === "applications") {
       fetchApplications();
     }
   }, [activeTab]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        setUserData(response.data.user);
+      }
+    } catch (err) {
+      console.error("Profile fetch error", err);
+    }
+  };
 
   const fetchUploadedPosts = async () => {
     try {
@@ -163,10 +200,73 @@ export default function OwnerDashboard() {
           >
             📋 Applications ({applications.length})
           </button>
+
+          <button
+            onClick={() => setActiveTab("verification")}
+            className={`
+      w-full lg:w-auto
+      px-6 py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2
+      ${
+        activeTab === "verification"
+          ? "bg-pink-600 text-white"
+          : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
+      }
+    `}
+          >
+            <ShieldAlert size={18} /> Verification Status
+          </button>
         </div>
+
+        {/* KYC Status Banner */}
+        {userData && userData.kycStatus !== "approved" && (
+          <div
+            className={`mb-6 p-4 rounded-xl border flex items-center justify-between ${
+              userData.kycStatus === "pending"
+                ? "bg-blue-50 border-blue-100 text-blue-700"
+                : "bg-orange-50 border-orange-100 text-orange-700"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {userData.kycStatus === "pending" ? (
+                <Clock size={20} />
+              ) : (
+                <ShieldAlert size={20} />
+              )}
+              <div>
+                <p className="font-bold text-sm">
+                  {userData.kycStatus === "pending"
+                    ? "Identity Verification Pending"
+                    : "Document Submission Required"}
+                </p>
+                <p className="text-xs opacity-80">
+                  {userData.kycStatus === "pending"
+                    ? "Admin is currently reviewing your documents. You can list rooms once approved."
+                    : "Please upload your citizenship or ID to start listing rooms."}
+                </p>
+              </div>
+            </div>
+            {userData.kycStatus !== "pending" && (
+              <Button
+                onClick={() => setActiveTab("verification")}
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                Upload Now
+              </Button>
+            )}
+          </div>
+        )}
 
         {error && (
           <Alert type="error" message={error} onClose={() => setError("")} />
+        )}
+
+        {success && (
+          <Alert
+            type="success"
+            message={success}
+            onClose={() => setSuccess("")}
+          />
         )}
 
         {/* Uploaded Posts Tab */}
@@ -356,6 +456,121 @@ export default function OwnerDashboard() {
               </div>
             )}
           </div>
+        )}
+        {/* Verification Tab */}
+        {activeTab === "verification" && (
+          <Card className="max-w-2xl border-none shadow-sm">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <FileCheck className="text-pink-600" /> Identity Verification
+              (KYC)
+            </h2>
+
+            <div className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <span className="text-sm font-medium text-gray-500 uppercase tracking-widest">
+                  Current Status
+                </span>
+                <span
+                  className={`text-xs font-black uppercase px-3 py-1 rounded-full ${
+                    userData?.kycStatus === "approved"
+                      ? "bg-green-100 text-green-700"
+                      : userData?.kycStatus === "pending"
+                        ? "bg-blue-100 text-blue-700"
+                        : userData?.kycStatus === "rejected"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {userData?.kycStatus || "Not Submitted"}
+                </span>
+              </div>
+
+              {userData?.kycStatus === "approved" ? (
+                <div className="text-center py-10">
+                  <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle size={40} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    You're Verified!
+                  </h3>
+                  <p className="text-sm text-gray-500 max-w-sm mx-auto mt-2">
+                    Your identity has been confirmed. You have full access to
+                    list rooms and manage bookings.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 font-medium">
+                    To comply with safety regulations, we require a clear photo
+                    of your **Citizenship ID** or **Voter Card**.
+                  </p>
+
+                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center bg-gray-50/50">
+                    <input
+                      type="file"
+                      id="kyc-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => setKycFile(e.target.files[0])}
+                    />
+                    <Upload className="mx-auto text-gray-300 mb-4" size={48} />
+                    <label
+                      htmlFor="kyc-upload"
+                      className="cursor-pointer block"
+                    >
+                      <span className="text-pink-600 font-bold hover:underline">
+                        Click to upload document
+                      </span>
+                      <p className="text-xs text-gray-400 mt-1">
+                        PNG, JPG up to 5MB
+                      </p>
+                    </label>
+                    {kycFile && (
+                      <div className="mt-4 p-2 bg-pink-50 text-pink-600 text-xs font-bold rounded flex items-center justify-center gap-2">
+                        <FileCheck size={14} /> {kycFile.name}
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    disabled={
+                      !kycFile ||
+                      uploadingKyc ||
+                      userData?.kycStatus === "pending"
+                    }
+                    onClick={async () => {
+                      try {
+                        setUploadingKyc(true);
+                        const formData = new FormData();
+                        formData.append("kycDocument", kycFile);
+                        await axios.post(
+                          `${API_BASE_URL}/auth/kyc-upload`,
+                          formData,
+                          {
+                            headers: {
+                              Authorization: `Bearer ${token}`,
+                              "Content-Type": "multipart/form-data",
+                            },
+                          },
+                        );
+                        setSuccess(
+                          "Document uploaded successfully. Admin will review it shortly.",
+                        );
+                        fetchProfile();
+                      } catch (err) {
+                        setError("Failed to upload document");
+                      } finally {
+                        setUploadingKyc(false);
+                      }
+                    }}
+                    className="w-full h-12 text-sm font-bold uppercase tracking-widest bg-pink-600 hover:bg-pink-700"
+                  >
+                    {uploadingKyc ? "Uploading..." : "Submit for Verification"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
         )}
       </div>
     </div>

@@ -7,11 +7,26 @@ import {
   deleteUserByAdmin,
   deleteListingByAdmin,
   getDashboardStats,
+  updateUserStatus,
+  updateUserRole,
+  updateListingStatus,
+  getAllPayments,
+  getAllRoomPayments,
+  getAllApplications,
+  getPendingKYC,
+  handleKYC,
+  getAllReports,
+  updateReportStatus,
+  getSettings,
+  updateSettings,
 } from "../controller/AdminController.js";
 
 const AdminRouter = express.Router();
 
-// Middleware to check admin status - Apply to all admin routes
+// Publicly accessible settings (for posting fees etc)
+AdminRouter.get("/settings/public", getSettings);
+
+// Middleware to check admin status - Apply to all remaining admin routes
 AdminRouter.use(protect, isAdmin);
 
 /**
@@ -128,5 +143,71 @@ AdminRouter.delete("/user/:userId", deleteUserByAdmin);
  *         description: Listing deleted successfully
  */
 AdminRouter.delete("/listing/:listingId", deleteListingByAdmin);
+
+/**
+ * @swagger
+ * /api/admin/user/{userId}/status:
+ *   patch:
+ *     summary: Update user status
+ *     tags: [Admin]
+ */
+AdminRouter.patch("/user/:userId/status", updateUserStatus);
+
+/**
+ * @swagger
+ * /api/admin/user/{userId}/role:
+ *   patch:
+ *     summary: Update user role
+ *     tags: [Admin]
+ */
+AdminRouter.patch("/user/:userId/role", updateUserRole);
+
+/**
+ * @swagger
+ * /api/admin/listing/{listingId}/status:
+ *   patch:
+ *     summary: Update listing status
+ *     tags: [Admin]
+ */
+AdminRouter.patch("/listing/:listingId/status", updateListingStatus);
+
+/**
+ * @swagger
+ * /api/admin/payments:
+ *   get:
+ *     summary: Get all payments
+ *     tags: [Admin]
+ */
+AdminRouter.get("/payments", getAllPayments);
+
+/**
+ * @swagger
+ * /api/admin/room-payments:
+ *   get:
+ *     summary: Get all room posting payments
+ *     tags: [Admin]
+ */
+AdminRouter.get("/room-payments", getAllRoomPayments);
+
+/**
+ * @swagger
+ * /api/admin/applications:
+ *   get:
+ *     summary: Get all applications
+ *     tags: [Admin]
+ */
+AdminRouter.get("/applications", getAllApplications);
+
+// KYC
+AdminRouter.get("/kyc/pending", getPendingKYC);
+AdminRouter.patch("/kyc/:userId", handleKYC);
+
+// Reports
+AdminRouter.get("/reports", getAllReports);
+AdminRouter.patch("/reports/:reportId", updateReportStatus);
+
+// Settings
+AdminRouter.get("/settings", getSettings);
+AdminRouter.patch("/settings", updateSettings);
 
 export default AdminRouter;

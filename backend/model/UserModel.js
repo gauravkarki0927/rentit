@@ -62,6 +62,16 @@ const UserSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    kycDocument: {
+      type: String, // URL/Path to citizenship/ID image
+      default: null,
+    },
+    kycStatus: {
+      type: String,
+      enum: ["unsubmitted", "pending", "approved", "rejected"],
+      default: "unsubmitted",
+    },
+    kycSubmittedAt: Date,
     isActive: {
       type: Boolean,
       default: true,
@@ -93,7 +103,7 @@ const UserSchema = new Schema(
       default: Date.now,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Hash password before saving
