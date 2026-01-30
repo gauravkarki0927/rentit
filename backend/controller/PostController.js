@@ -1,4 +1,6 @@
 import Post from "../model/PostModel.js";
+import Report from "../model/ReportModel.js";
+import User from "../model/UserModel.js";
 import { geocodeAddress } from "../utils/geolocation.js";
 import TrieSearch from "../utils/TrieSearch.js";
 import RoomPaymentModel from "../model/RoomPaymentModel.js";
@@ -542,4 +544,26 @@ export {
   getRecommendations,
   searchPrefix,
   populateTrieIndex,
+};
+// Report a post
+export const reportPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { reason, description } = req.body;
+
+    const report = await Report.create({
+      reporterId: req.user._id,
+      postId,
+      reason,
+      description,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Listing reported successfully. Admin will review it.",
+      report,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 };

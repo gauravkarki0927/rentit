@@ -11,12 +11,22 @@ import {
   updateUserRole,
   updateListingStatus,
   getAllPayments,
+  getAllRoomPayments,
   getAllApplications,
+  getPendingKYC,
+  handleKYC,
+  getAllReports,
+  updateReportStatus,
+  getSettings,
+  updateSettings,
 } from "../controller/AdminController.js";
 
 const AdminRouter = express.Router();
 
-// Middleware to check admin status - Apply to all admin routes
+// Publicly accessible settings (for posting fees etc)
+AdminRouter.get("/settings/public", getSettings);
+
+// Middleware to check admin status - Apply to all remaining admin routes
 AdminRouter.use(protect, isAdmin);
 
 /**
@@ -172,11 +182,32 @@ AdminRouter.get("/payments", getAllPayments);
 
 /**
  * @swagger
+ * /api/admin/room-payments:
+ *   get:
+ *     summary: Get all room posting payments
+ *     tags: [Admin]
+ */
+AdminRouter.get("/room-payments", getAllRoomPayments);
+
+/**
+ * @swagger
  * /api/admin/applications:
  *   get:
  *     summary: Get all applications
  *     tags: [Admin]
  */
 AdminRouter.get("/applications", getAllApplications);
+
+// KYC
+AdminRouter.get("/kyc/pending", getPendingKYC);
+AdminRouter.patch("/kyc/:userId", handleKYC);
+
+// Reports
+AdminRouter.get("/reports", getAllReports);
+AdminRouter.patch("/reports/:reportId", updateReportStatus);
+
+// Settings
+AdminRouter.get("/settings", getSettings);
+AdminRouter.patch("/settings", updateSettings);
 
 export default AdminRouter;
