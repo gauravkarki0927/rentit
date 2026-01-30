@@ -132,6 +132,9 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   }, [API_BASE_URL, token]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Initial load and tab changes
   useEffect(() => {
@@ -381,7 +384,7 @@ export default function AdminDashboard() {
                     bg: "bg-purple-100",
                   },
                   {
-                    label: "Pending Apps",
+                    label: "Pending Applications",
                     value: stats?.pendingApplications || 0,
                     icon: Clock,
                     color: "text-orange-600",
