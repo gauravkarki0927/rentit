@@ -1,13 +1,39 @@
 import Application from "../model/ApplicationModel.js";
 import mongoose from "mongoose";
-
+import {
+  sendApplicationApproveEmailToTenant,
+  sendApplicationReceivedEmailToTenant,
+  sendApplicationRejectEmailToTenant,
+  sendApplicationSentEmailToOwner,
+} from "../utils/sendEmail.js";
+import UserModel from "../model/UserModel.js";
+import PostModel from "../model/PostModel.js";
 
 export const createApplication = async (req, res) => {
   try {
-    const { roomId, ownerId, duration, people, userEmail, userPhone, userName, address } = req.body;
+    const {
+      roomId,
+      ownerId,
+      duration,
+      people,
+      userEmail,
+      userPhone,
+      userName,
+      address,
+    } = req.body;
+
     const tenantId = req.user._id;
 
-    // Check if already applied
+    // ✅ Validate IDs first
+    if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+      return res.status(400).json({ success: false, message: "Invalid owner ID" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(roomId)) {
+      return res.status(400).json({ success: false, message: "Invalid room ID" });
+    }
+
+    // Check duplicate
     const existingApp = await Application.findOne({ roomId, tenantId });
     if (existingApp) {
       return res.status(400).json({
@@ -28,6 +54,22 @@ export const createApplication = async (req, res) => {
       people,
     });
 
+    const owner = await UserModel.findById(ownerId);
+    const post = await PostModel.findById(roomId);
+
+    if (application && owner && post) {
+      await sendApplicationSentEmailToOwner({
+        owner,
+        applicant: application,
+        post,
+      });
+
+      await sendApplicationReceivedEmailToTenant({
+        applicant: application,
+        post,
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: "Application submitted successfully",
@@ -42,6 +84,7 @@ export const createApplication = async (req, res) => {
     });
   }
 };
+
 
 export const getAllApplications = async (req, res) => {
   try {
@@ -64,7 +107,6 @@ export const getAllApplications = async (req, res) => {
     });
   }
 };
-
 
 export const getApplicationByID = async (req, res) => {
   try {
@@ -94,8 +136,6 @@ export const getApplicationByID = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-
 
 export const getOwnerApplications = async (req, res) => {
   try {
@@ -145,7 +185,16 @@ export const getMyApplications = async (req, res) => {
 
 export const updateApplication = async (req, res) => {
   try {
-    const { roomId, ownerId, duration, people, userEmail, userPhone, userName, address } = req.body;
+    const {
+      roomId,
+      ownerId,
+      duration,
+      people,
+      userEmail,
+      userPhone,
+      userName,
+      address,
+    } = req.body;
     const tenantId = req.user._id;
     const application = await Application.findByIdAndUpdate(
       req.params.id,
@@ -160,7 +209,7 @@ export const updateApplication = async (req, res) => {
         duration,
         people,
       },
-      { new: true }
+      { new: true },
     );
 
     res.status(201).json({
@@ -178,13 +227,21 @@ export const updateApplication = async (req, res) => {
   }
 };
 
-
 export const updateApplicationStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
     const ownerId = req.user._id;
 
+    // Only allow these values
+    if (!["accepted", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be either 'approved' or 'rejected'",
+      });
+    }
+
+    // Find application owned by this owner
     const application = await Application.findOne({ _id: id, ownerId });
 
     if (!application) {
@@ -194,12 +251,34 @@ export const updateApplicationStatus = async (req, res) => {
       });
     }
 
+    // Update status
     application.status = status;
     await application.save();
 
+    // Fetch post for email content
+    const post = await PostModel.findById(application.roomId);
+
+    const owner = await UserModel.findById(ownerId);
+
+    // Send email based on status
+    if (status === "accepted") {
+      await sendApplicationApproveEmailToTenant({
+        applicant: application,
+        post,
+        owner,
+      });
+    }
+
+    if (status === "rejected") {
+      await sendApplicationRejectEmailToTenant({
+        applicant: application,
+        post,
+      });
+    }
+
     res.status(200).json({
       success: true,
-      message: "Application status updated",
+      message: `Application ${status} successfully`,
       application,
     });
   } catch (error) {

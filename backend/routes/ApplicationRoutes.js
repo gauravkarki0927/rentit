@@ -16,7 +16,6 @@ const router = express.Router();
 router.post("/", protect, createApplication);
 router.get("/owner", protect, getOwnerApplications);
 router.get("/", protect, getAllApplications); 
-router.get("/my", protect, getMyApplications);
 router.get("/my-applications", protect, getMyApplications); // Alias for user dashboard
 router.get("/:id", protect, getApplicationByID);
 router.put("/:id/status", protect, updateApplicationStatus);

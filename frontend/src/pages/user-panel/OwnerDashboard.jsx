@@ -6,12 +6,23 @@ import {
   Loading,
   Alert,
   Button,
+  Input,
 } from "../../components/common/UIComponents";
-import { Edit2, Trash2, Eye, DollarSign } from "lucide-react";
+import {
+  Edit2,
+  Trash2,
+  Eye,
+  DollarSign,
+  Settings,
+  AppWindow,
+  Upload,
+  Plus,
+  User,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function OwnerDashboard() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("uploaded"); // uploaded, applications
   const [uploadedPosts, setUploadedPosts] = useState([]);
@@ -20,15 +31,50 @@ export default function OwnerDashboard() {
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || "",
+    phoneNumber: user?.phoneNumber || "",
+    bio: user?.bio || "",
+    address: {
+      city: user?.address?.city || "",
+      state: user?.address?.state || "",
+      country: user?.address?.country || "",
+    },
+  });
+
   const API_BASE_URL =
     import.meta.env.VITE_BASE_API_URL || "http://localhost:3000/api";
 
-  useEffect(() => {
-    if (activeTab === "uploaded") {
-      fetchUploadedPosts();
+  const allowActions = true; // You can set conditions here if needed
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name.includes("address.")) {
+      const key = name.split(".")[1];
+      setFormData((prev) => ({
+        ...prev,
+        address: { ...prev.address, [key]: value },
+      }));
     } else {
-      fetchApplications();
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    const result = await updateProfile(formData);
+    if (result.success) {
+      setMessage({ type: "success", text: "Profile updated successfully!" });
+      setIsEditing(false);
+    } else {
+      setMessage({ type: "error", text: result.message });
+    }
+    setTimeout(() => setMessage(""), 3000);
+  };
+
+  useEffect(() => {
+    fetchUploadedPosts();
+    fetchApplications();
   }, [activeTab]);
 
   const fetchUploadedPosts = async () => {
@@ -123,7 +169,7 @@ export default function OwnerDashboard() {
             onClick={() => navigate("/create-listing")}
             className={`
       w-full lg:w-auto
-      px-6 py-2 rounded-lg font-semibold transition
+      px-6 py-2 rounded-lg font-semibold transition flex items-center
       ${
         activeTab === "create-listing"
           ? "bg-pink-600 text-white"
@@ -131,14 +177,14 @@ export default function OwnerDashboard() {
       }
     `}
           >
-            ➕ Create New Listing
+            <Plus className="w-4 h-4 mr-2 inline" /> Create New Listing
           </button>
 
           <button
             onClick={() => setActiveTab("uploaded")}
             className={`
       w-full lg:w-auto
-      px-6 py-2 rounded-lg font-semibold transition
+      px-6 py-2 rounded-lg font-semibold transition flex items-center 
       ${
         activeTab === "uploaded"
           ? "bg-pink-600 text-white"
@@ -146,14 +192,15 @@ export default function OwnerDashboard() {
       }
     `}
           >
-            📤 My Uploaded Rooms ({uploadedPosts.length})
+            <Upload className="w-4 h-4 mr-2 inline" /> My Uploaded Rooms (
+            {uploadedPosts.length})
           </button>
 
           <button
             onClick={() => setActiveTab("applications")}
             className={`
       w-full lg:w-auto
-      px-6 py-2 rounded-lg font-semibold transition
+      px-6 py-2 rounded-lg font-semibold transition flex items-center
       ${
         activeTab === "applications"
           ? "bg-pink-600 text-white"
@@ -161,7 +208,22 @@ export default function OwnerDashboard() {
       }
     `}
           >
-            📋 Applications ({applications.length})
+            <AppWindow className="w-4 h-4 mr-2 inline" /> Applications (
+            {applications.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("profile")}
+            className={`
+      w-full lg:w-auto
+      px-6 py-2 rounded-lg font-semibold transition items-center flex
+      ${
+        activeTab === "profile"
+          ? "bg-pink-600 text-white"
+          : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
+      }
+    `}
+          >
+            <User className="w-4 h-4 mr-2 inline" /> Profile
           </button>
         </div>
 
@@ -356,6 +418,137 @@ export default function OwnerDashboard() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Applications Tab */}
+        {activeTab === "profile" && (
+          <Card>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                My Profile{" "}
+                {user?.userType === "owner" || user?.userType === "both"
+                  ? "(Owner)"
+                  : "(Tenant)"}
+              </h2>
+              <Button
+                variant={isEditing ? "secondary" : "primary"}
+                onClick={() => setIsEditing(!isEditing)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Edit2 size={18} />
+                {isEditing ? "Cancel" : "Edit"}
+              </Button>
+            </div>
+
+            {isEditing ? (
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <Input
+                  label="Full Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Phone Number"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleInputChange}
+                  placeholder="+977 9800000000"
+                />
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bio
+                  </label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    rows="4"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    placeholder="Tell others about yourself..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="City"
+                    name="address.city"
+                    value={formData.address.city}
+                    onChange={handleInputChange}
+                  />
+                  <Input
+                    label="State"
+                    name="address.state"
+                    value={formData.address.state}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <Input
+                  label="Country"
+                  name="address.country"
+                  value={formData.address.country}
+                  onChange={handleInputChange}
+                />
+
+                <div className="flex gap-4">
+                  <Button type="submit" className="flex-1">
+                    Save Changes
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600">
+                    Name
+                  </label>
+                  <p className="text-gray-900">{user?.name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600">
+                    Email
+                  </label>
+                  <p className="text-gray-900">{user?.email}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600">
+                    Phone
+                  </label>
+                  <p className="text-gray-900">
+                    {user?.phoneNumber || "Not provided"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600">
+                    Bio
+                  </label>
+                  <p className="text-gray-900">{user?.bio || "No bio added"}</p>
+                </div>
+                {user?.address?.city && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600">
+                      Location
+                    </label>
+                    <p className="text-gray-900">
+                      {user.address.city}, {user.address.state},{" "}
+                      {user.address.country}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
         )}
       </div>
     </div>

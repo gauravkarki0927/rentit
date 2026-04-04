@@ -117,6 +117,9 @@ export default function TenantDashboard() {
     }
   };
 
+  console.log("Pending Applications:", pendingApps);
+  console.log("History Applications:", historyApps);
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -391,12 +394,11 @@ export default function TenantDashboard() {
                             </Button>
                           </div>
                         </div>
-<div className="flex justify-end">
-  <p className="text-sm bg-green-500 text-white px-2 py-1 rounded">
-    {new Date(app.createdAt).toLocaleString()}
-  </p>
-</div>
-
+                        <div className="flex justify-end">
+                          <p className="text-sm bg-green-500 text-white px-2 py-1 rounded">
+                            {new Date(app.createdAt).toLocaleString()}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -434,7 +436,7 @@ export default function TenantDashboard() {
                       >
                         <div>
                           <h3 className="font-semibold text-gray-900">
-                            Room ID: {app.roomId}
+                            Room ID: {app.roomId?._id}
                           </h3>
                           <p className="text-sm text-gray-600">
                             Duration: {app.duration} • People: {app.people}
@@ -458,7 +460,7 @@ export default function TenantDashboard() {
                         <div className="flex gap-2">
                           <Button
                             size="sm"
-                            onClick={() => navigate(`/applications/${app._id}`)}
+                            onClick={() => navigate(`/application-details/${app._id}`)}
                           >
                             <Eye size={16} />
                           </Button>
