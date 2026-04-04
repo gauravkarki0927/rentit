@@ -6,10 +6,12 @@ import {
   updatePost,
   deletePost,
   getUserListings,
-  searchNearby,
-  getRecommendations,
-  searchPrefix,
   reportPost,
+  searchByPrefix,
+  searchByNearby,
+  getRecommendations,
+  getSimilarRooms,
+  getTrendingRooms,
 } from "../controller/PostController.js";
 import { protect } from "../middleware/auth.js";
 import { uploadListing } from "../config/multer.js";
@@ -176,9 +178,11 @@ const PostRouter = express.Router();
 
 PostRouter.post("/", protect, uploadListing.array("images", 10), createPost);
 PostRouter.get("/my-listings", protect, getUserListings);
-PostRouter.get("/search/prefix", searchPrefix);
-PostRouter.get("/nearby", searchNearby);
-PostRouter.get("/recommendations", getRecommendations);
+PostRouter.get("/search/prefix", searchByPrefix);
+PostRouter.get("/search/nearby", searchByNearby);
+PostRouter.get("/recommendations", protect, getRecommendations);
+PostRouter.get("/trending", getTrendingRooms);
+PostRouter.get("/similar/:postId", getSimilarRooms);
 PostRouter.get("/", getPost);
 PostRouter.get("/:id", getPostById);
 PostRouter.put("/:id", protect, uploadListing.array("images", 10), updatePost);

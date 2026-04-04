@@ -239,6 +239,44 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm("Are you sure you want to delete this user and all their listings?")) {
+      try {
+        const resp = await axios.delete(
+          `${API_BASE_URL}/admin/user/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (resp.data.success) {
+          setUsers(users.filter((u) => u._id !== userId));
+          setSuccess("User deleted successfully");
+          fetchStats();
+        }
+      } catch (err) {
+        setError("Failed to delete user");
+        console.error("Delete User Error:", err);
+      }
+    }
+  };
+
+  const handleDeleteListing = async (listingId) => {
+    if (window.confirm("Are you sure you want to delete this listing?")) {
+      try {
+        const resp = await axios.delete(
+          `${API_BASE_URL}/admin/listing/${listingId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (resp.data.success) {
+          setListings(listings.filter((l) => l._id !== listingId));
+          setSuccess("Listing deleted successfully");
+          fetchStats();
+        }
+      } catch (err) {
+        setError("Failed to delete listing");
+        console.error("Delete Listing Error:", err);
+      }
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/");

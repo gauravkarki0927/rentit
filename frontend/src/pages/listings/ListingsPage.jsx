@@ -120,18 +120,18 @@ export default function ListingsPage() {
 
       if (useGeolocation && userLocation) {
         try {
-          const radiusInMeters = parseInt(filters.radius) * 1000;
+          const radiusInKm = parseInt(filters.radius) || 5;
 
-          const response = await axios.get(`${API_BASE_URL}/posts/nearby`, {
+          const response = await axios.get(`${API_BASE_URL}/posts/search/nearby`, {
             params: {
-              latitude: userLocation.latitude,
-              longitude: userLocation.longitude,
-              maxDistance: radiusInMeters,
+              lat: userLocation.latitude,
+              lon: userLocation.longitude,
+              radius: radiusInKm,
             },
           });
 
-          if (response.data.success && Array.isArray(response.data.listings)) {
-            setListings(response.data.listings);
+          if (response.data.success && Array.isArray(response.data.rooms)) {
+            setListings(response.data.rooms);
           } else {
             setListings([]);
             setError("No listings found nearby");
