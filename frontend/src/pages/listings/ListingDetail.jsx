@@ -13,6 +13,7 @@ import {
   Star,
   Calendar,
   AlertCircle,
+  Flag,
 } from "lucide-react";
 import {
   Card,
@@ -25,13 +26,18 @@ import { useAuth } from "../../context/useAuth";
 export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, token } = useAuth();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("Fake Listing");
+  const [reportDescription, setReportDescription] = useState("");
+  const [reporting, setReporting] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState("");
 
   const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
@@ -109,6 +115,35 @@ export default function ListingDetail() {
         roomPrice: listing.price,
       },
     });
+  };
+
+  const handleReportPost = async () => {
+    try {
+      setReporting(true);
+      const resp = await axios.post(
+        `${API_BASE_URL}/posts/${id}/report`,
+        {
+          reason: reportReason,
+          description: reportDescription,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token || localStorage.getItem("token")}`,
+          },
+        },
+      );
+      if (resp.data.success) {
+        setReportSuccess("Report submitted successfully.");
+        setTimeout(() => {
+          setReportModalOpen(false);
+          setReportSuccess("");
+        }, 2000);
+      }
+    } catch (err) {
+      setError("Failed to submit report");
+    } finally {
+      setReporting(false);
+    }
   };
 
   if (loading) {
@@ -192,7 +227,7 @@ export default function ListingDetail() {
                   <button
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
+                    className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
                       idx === currentImageIndex
                         ? "border-blue-600"
                         : "border-gray-300"
@@ -210,11 +245,18 @@ export default function ListingDetail() {
 
             {/* Details Card */}
             <Card className="p-6">
-              <h1 className="text-3xl font-bold mb-2">{listing.name}</h1>
+              <div className="flex justify-between items-start mb-2">
+                <h1 className="text-3xl font-bold">{listing.name}</h1>
+                {listing.isFeatured && (
+                  <div className="bg-yellow-100 text-yellow-700 text-[10px] font-black px-2 py-1 rounded border border-yellow-200 flex items-center gap-1">
+                    <Star size={12} fill="currentColor" /> FEATURED
+                  </div>
+                )}
+              </div>
 
               {/* Location */}
               <div className="flex items-start gap-2 text-gray-600 mb-4">
-                <MapPin className="flex-shrink-0 mt-1" size={20} />
+                <MapPin className="shrink-0 mt-1" size={20} />
                 <div>
                   <p className="font-medium">
                     {listing.location?.street && `${listing.location.street}, `}
@@ -393,7 +435,7 @@ export default function ListingDetail() {
                 </Button>
               )}
 
-              <div className="space-y-3 text-sm text-gray-600">
+              <div className="mt-6 space-y-3 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <Calendar size={18} />
                   <span>Available from immediately</span>
@@ -402,6 +444,15 @@ export default function ListingDetail() {
                   <Home size={18} />
                   <span>{listing.category}</span>
                 </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <button
+                  onClick={() => setReportModalOpen(true)}
+                  className="flex items-center justify-center gap-2 text-red-500 text-sm font-bold hover:text-red-700 transition w-full"
+                >
+                  <Flag size={16} /> Report Listing
+                </button>
               </div>
             </Card>
 
@@ -415,6 +466,63 @@ export default function ListingDetail() {
           </div>
         </div>
       </div>
+
+      {reportModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold mb-4">Report Listing</h3>
+            {reportSuccess ? (
+              <Alert type="success" message={reportSuccess} />
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black uppercase text-gray-400 mb-1">
+                    Reason
+                  </label>
+                  <select
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full bg-gray-50 border rounded-lg p-3 text-sm font-medium"
+                  >
+                    <option value="Fake Listing">Fake Listing</option>
+                    <option value="Incorrect Price">Incorrect Price</option>
+                    <option value="Already Rented">Already Rented</option>
+                    <option value="Abusive Content">Abusive Content</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase text-gray-400 mb-1">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    value={reportDescription}
+                    onChange={(e) => setReportDescription(e.target.value)}
+                    rows="3"
+                    className="w-full bg-gray-50 border rounded-lg p-3 text-sm font-medium focus:ring-2 ring-pink-500 outline-none"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setReportModalOpen(false)}
+                    variant="secondary"
+                    className="flex-1 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleReportPost}
+                    disabled={reporting}
+                    className="flex-1 text-xs bg-red-600 hover:bg-red-700 uppercase tracking-widest font-black"
+                  >
+                    {reporting ? "Submitting..." : "Submit Report"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

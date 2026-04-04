@@ -436,7 +436,7 @@ export default function TenantDashboard() {
                       >
                         <div>
                           <h3 className="font-semibold text-gray-900">
-                            Room ID: {app.roomId?._id}
+                            Room ID: {app.roomId._id}
                           </h3>
                           <p className="text-sm text-gray-600">
                             Duration: {app.duration} • People: {app.people}
@@ -460,7 +460,7 @@ export default function TenantDashboard() {
                         <div className="flex gap-2">
                           <Button
                             size="sm"
-                            onClick={() => navigate(`/application-details/${app._id}`)}
+                            onClick={() => navigate(`/applications/${app.roomId._id}`)}
                           >
                             <Eye size={16} />
                           </Button>

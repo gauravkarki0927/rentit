@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { Button, Input, Alert } from "../../components/common/UIComponents";
-import { Mail, Lock, User, MapPin } from "lucide-react";
+import { Mail, Lock, User, MapPin, Eye, EyeOff } from "lucide-react";
 import { successToast, errorToast } from "../../utils/toast";
 
 export default function SignUp() {
@@ -21,6 +21,9 @@ export default function SignUp() {
       longitude: null,
     },
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [locationStatus, setLocationStatus] = useState("idle"); // idle, loading, success, error
@@ -123,7 +126,7 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-white flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">
@@ -173,27 +176,49 @@ export default function SignUp() {
               </select>
             </div>
 
-            <Input
-              label="Password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              error={errors.password}
-              icon={<Lock size={18} />}
-            />
+            <div className="relative">
+              <Input
+                label="Password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                error={errors.password}
+                icon={<Lock size={18} />}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-10 text-gray-500 hover:text-gray-700"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
 
-            <Input
-              label="Confirm Password"
-              name="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              error={errors.confirmPassword}
-              icon={<Lock size={18} />}
-            />
+            <div className="relative">
+              <Input
+                label="Confirm Password"
+                name="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                error={errors.confirmPassword}
+                icon={<Lock size={18} />}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute right-3 top-10 text-gray-500 hover:text-gray-700"
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
 
             <div className="border-t pt-4 mt-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-4">

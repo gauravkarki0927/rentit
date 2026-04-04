@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import {
@@ -20,7 +20,7 @@ export default function CreateListing() {
 
   const [paymentMethod, setPaymentMethod] = useState("khalti");
   const [paymentInitiated, setPaymentInitiated] = useState(false);
-  const payableAmount = 50;
+  const [payableAmount, setPayableAmount] = useState(50);
   const [createdPostId, setCreatedPostId] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -40,6 +40,26 @@ export default function CreateListing() {
     import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
   const categories = ["Room", "Flat", "Attached Kitchen", "Attached Bathroom"];
+
+  useEffect(() => {
+    // Check KYC
+    if (user?.kycStatus !== "approved") {
+      navigate("/owner-dashboard?tab=verification");
+    }
+
+    // Fetch Settings for Fee
+    const fetchFee = async () => {
+      try {
+        const resp = await axios.get(`${API_BASE_URL}/admin/settings/public`);
+        if (resp.data.success) {
+          setPayableAmount(resp.data.settings.postingFee);
+        }
+      } catch (err) {
+        console.error("Failed to fetch posting fee", err);
+      }
+    };
+    fetchFee();
+  }, [user, navigate, API_BASE_URL]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -484,7 +504,9 @@ export default function CreateListing() {
             <Card className="p-6">
               <h3 className="text-xl font-bold mb-4">Payment Summary</h3>
               <p className="text-gray-600">Listing Upload Fee</p>
-              <p className="text-2xl font-bold text-green-600">Rs. 50</p>
+              <p className="text-2xl font-bold text-green-600">
+                Rs. {payableAmount}
+              </p>
             </Card>
 
             <Card className="p-6">
@@ -556,10 +578,7 @@ export default function CreateListing() {
 
               {paymentMethod === "khalti" && (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex gap-3">
-                  <AlertCircle
-                    className="text-blue-600 flex-shrink-0"
-                    size={20}
-                  />
+                  <AlertCircle className="text-blue-600 shrink-0" size={20} />
                   <p className="text-sm text-blue-800">
                     You will be redirected to Khalti's secure payment gateway.
                     Your payment will be verified and your booking confirmed.
