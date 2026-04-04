@@ -107,4 +107,199 @@ class TrieSearch {
   }
 }
 
+/**
+ * RoomListingSearcher - Search rooms by location, amenities, and name
+ * Uses Trie for efficient prefix searching
+ */
+class RoomListingSearcher {
+  constructor() {
+    this.locationTrie = new TrieSearch();
+    this.amenityTrie = new TrieSearch();
+    this.nameTrie = new TrieSearch();
+    this.rooms = new Map(); // Store room data by ID
+  }
+
+  /**
+   * Index a room for searching
+   * @param {Object} room - Room object with name, location, amenities
+   */
+  indexRoom(room) {
+    if (!room || !room._id) return;
+
+    // Store room data
+    this.rooms.set(room._id, room);
+
+    // Index room name
+    if (room.name) {
+      this.nameTrie.insert(room.name);
+    }
+
+    // Index location (city, district, area)
+    if (room.location) {
+      if (typeof room.location === 'string') {
+        this.locationTrie.insert(room.location);
+      } else if (room.location.city) {
+        this.locationTrie.insert(room.location.city);
+      }
+      if (room.location.area) {
+        this.locationTrie.insert(room.location.area);
+      }
+    }
+
+    // Index amenities
+    if (Array.isArray(room.amenities)) {
+      for (const amenity of room.amenities) {
+        if (typeof amenity === 'string') {
+          this.amenityTrie.insert(amenity);
+        } else if (amenity.name) {
+          this.amenityTrie.insert(amenity.name);
+        }
+      }
+    }
+  }
+
+  /**
+   * Index multiple rooms
+   * @param {Array} rooms - Array of room objects
+   */
+  indexRooms(rooms) {
+    if (!Array.isArray(rooms)) return;
+    for (const room of rooms) {
+      this.indexRoom(room);
+    }
+  }
+
+  /**
+   * Search for rooms by location prefix
+   * @param {string} locationPrefix - Location prefix to search
+   * @returns {Array} - Matching rooms
+   */
+  searchByLocation(locationPrefix) {
+    const matches = this.locationTrie.getSuggestions(locationPrefix);
+    const results = [];
+
+    for (const [roomId, room] of this.rooms) {
+      const roomLocation = typeof room.location === 'string' 
+        ? room.location 
+        : (room.location?.city || '');
+      
+      if (matches.some(match => roomLocation.toLowerCase().includes(match))) {
+        results.push(room);
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Search for rooms by name prefix
+   * @param {string} namePrefix - Name prefix to search
+   * @returns {Array} - Matching rooms
+   */
+  searchByName(namePrefix) {
+    const matches = this.nameTrie.getSuggestions(namePrefix);
+    const results = [];
+
+    for (const [roomId, room] of this.rooms) {
+      if (matches.some(match => room.name?.toLowerCase().includes(match))) {
+        results.push(room);
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Search for rooms by amenity
+   * @param {string} amenityPrefix - Amenity prefix to search
+   * @returns {Array} - Matching rooms
+   */
+  searchByAmenity(amenityPrefix) {
+    const matches = this.amenityTrie.getSuggestions(amenityPrefix);
+    const results = [];
+
+    for (const [roomId, room] of this.rooms) {
+      if (Array.isArray(room.amenities)) {
+        const hasAmenity = room.amenities.some(amenity => {
+          const amenityStr = typeof amenity === 'string' ? amenity : amenity.name || '';
+          return matches.some(match => amenityStr.toLowerCase().includes(match));
+        });
+        if (hasAmenity) {
+          results.push(room);
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Combined search - search by location, name, and amenities
+   * @param {string} query - Search query
+   * @returns {Array} - Combined results
+   */
+  search(query) {
+    if (!query || typeof query !== 'string') return [];
+
+    const normalizedQuery = query.toLowerCase().trim();
+    const locationResults = this.searchByLocation(normalizedQuery);
+    const nameResults = this.searchByName(normalizedQuery);
+    const amenityResults = this.searchByAmenity(normalizedQuery);
+
+    // Combine results, removing duplicates
+    const allResults = new Map();
+    
+    for (const room of locationResults) {
+      allResults.set(room._id, { ...room, matchType: 'location' });
+    }
+    for (const room of nameResults) {
+      const existing = allResults.get(room._id);
+      if (existing) {
+        existing.matchTypes = (existing.matchTypes || [existing.matchType]).concat('name');
+      } else {
+        allResults.set(room._id, { ...room, matchType: 'name' });
+      }
+    }
+    for (const room of amenityResults) {
+      const existing = allResults.get(room._id);
+      if (existing) {
+        existing.matchTypes = (existing.matchTypes || [existing.matchType]).concat('amenity');
+      } else {
+        allResults.set(room._id, { ...room, matchType: 'amenity' });
+      }
+    }
+
+    return Array.from(allResults.values());
+  }
+
+  /**
+   * Get autocomplete suggestions
+   * @param {string} query - Search query
+   * @param {number} limit - Maximum suggestions
+   * @returns {Object} - Suggestions object with locations, names, amenities
+   */
+  getAutocompleteSuggestions(query, limit = 5) {
+    if (!query || typeof query !== 'string') {
+      return { locations: [], names: [], amenities: [] };
+    }
+
+    return {
+      locations: this.locationTrie.getSuggestions(query, limit),
+      names: this.nameTrie.getSuggestions(query, limit),
+      amenities: this.amenityTrie.getSuggestions(query, limit),
+    };
+  }
+
+  /**
+   * Clear all indexed data
+   */
+  clear() {
+    this.locationTrie.clear();
+    this.amenityTrie.clear();
+    this.nameTrie.clear();
+    this.rooms.clear();
+  }
+}
+
+export { TrieSearch, RoomListingSearcher };
 export default TrieSearch;

@@ -20,6 +20,9 @@ import {
   Trash2,
   Eye,
   DollarSign,
+  Plus,
+  AppWindow,
+  User,
 } from "lucide-react";
 
 export default function OwnerDashboard() {
@@ -37,6 +40,9 @@ export default function OwnerDashboard() {
   const [userData, setUserData] = useState(null);
   const [searchParams] = useSearchParams();
   const [success, setSuccess] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [message, setMessage] = useState("");
   const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
@@ -48,30 +54,18 @@ export default function OwnerDashboard() {
   }, [searchParams]);
 
   useEffect(() => {
-    fetchProfile();
+    if (token) {
+      fetchProfile();
+    }
+  }, [token]);
+
+  useEffect(() => {
     if (activeTab === "uploaded") {
       fetchUploadedPosts();
     } else if (activeTab === "applications") {
       fetchApplications();
     }
-  });
-
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    const result = await updateProfile(formData);
-    if (result.success) {
-      setMessage({ type: "success", text: "Profile updated successfully!" });
-      setIsEditing(false);
-    } else {
-      setMessage({ type: "error", text: result.message });
-    }
-    setTimeout(() => setMessage(""), 3000);
-  };
-
-  useEffect(() => {
-    fetchUploadedPosts();
-    fetchApplications();
-  }, [activeTab]);
+  }, [activeTab, token]);
 
   const fetchProfile = async () => {
     try {
@@ -154,6 +148,31 @@ export default function OwnerDashboard() {
     } catch (err) {
       alert("Failed to update status");
     }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/auth/me`,
+        formData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (response.data.success) {
+        setUserData(response.data.user);
+        setMessage({ type: "success", text: "Profile updated successfully!" });
+        setIsEditing(false);
+        setFormData({});
+      }
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to update profile",
+      });
+    }
+    setTimeout(() => setMessage(""), 3000);
   };
 
   if (loading) return <Loading />;
@@ -491,6 +510,143 @@ export default function OwnerDashboard() {
             )}
           </div>
         )}
+
+        {/* Profile Tab */}
+        {activeTab === "profile" && (
+          <Card className="max-w-2xl border-none shadow-sm">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <User className="text-pink-600" /> My Profile
+            </h2>
+
+            {message && (
+              <Alert
+                type={message.type}
+                message={message.text}
+                onClose={() => setMessage("")}
+              />
+            )}
+
+            {isEditing ? (
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <Input
+                  label="Full Name"
+                  name="name"
+                  value={formData.name || userData?.name || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="Your full name"
+                />
+
+                <Input
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={userData?.email || ""}
+                  disabled
+                  className="bg-gray-100"
+                />
+
+                <Input
+                  label="Phone"
+                  name="phone"
+                  value={formData.phone || userData?.phone || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="Your phone number"
+                />
+
+                <Input
+                  label="Address"
+                  name="address"
+                  value={
+                    formData.address ||
+                    (userData?.address?.street || "")
+                  }
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  placeholder="Your address"
+                />
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="submit"
+                    className="flex-1 bg-pink-600 hover:bg-pink-700"
+                  >
+                    Save Changes
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setFormData({});
+                    }}
+                    className="flex-1 bg-gray-400 hover:bg-gray-500"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-6">
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">
+                    Full Name
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {userData?.name || "Not provided"}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">
+                    Email Address
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {userData?.email || "Not provided"}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">
+                    Phone Number
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {userData?.phone || "Not provided"}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">
+                    Address
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {userData?.address?.street ||
+                      userData?.address?.city ||
+                      "Not provided"}
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    setIsEditing(true);
+                    setFormData({
+                      name: userData?.name || "",
+                      phone: userData?.phone || "",
+                      address: userData?.address?.street || "",
+                    });
+                  }}
+                  className="w-full bg-pink-600 hover:bg-pink-700"
+                >
+                  Edit Profile
+                </Button>
+              </div>
+            )}
+          </Card>
+        )}
+
         {/* Verification Tab */}
         {activeTab === "verification" && (
           <Card className="max-w-2xl border-none shadow-sm">

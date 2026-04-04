@@ -373,78 +373,6 @@ const searchNearby = async (req, res) => {
   }
 };
 
-// Get recommended listings based on user's location and search history
-const getRecommendations = async (req, res) => {
-  try {
-    const { latitude, longitude, category, limit = 10 } = req.query;
-    const userId = req.user?._id;
-
-    let query = { status: "available" };
-    let recommendations = [];
-
-    // If coordinates are provided, prioritize listings near user
-    if (latitude && longitude) {
-      try {
-        // Find nearby listings using geospatial query
-        const nearbyListings = await Post.find({
-          "location.coordinates": {
-            $near: {
-              $geometry: {
-                type: "Point",
-                coordinates: [parseFloat(longitude), parseFloat(latitude)],
-              },
-              $maxDistance: 50000, // 50km radius
-            },
-          },
-          status: "available",
-        })
-          .populate("userId", "name email profileImage")
-          .limit(Math.floor(limit / 2));
-
-        recommendations.push(...nearbyListings);
-      } catch (geoError) {
-        console.warn(
-          "Geospatial query failed, falling back to category search",
-        );
-      }
-    }
-
-    // Add category preferences if available
-    let categoryListings = [];
-    if (category) {
-      query.category = category;
-      categoryListings = await Post.find(query)
-        .populate("userId", "name email profileImage")
-        .limit(Math.floor(limit / 2));
-    } else {
-      // Get random recommendations if no category specified
-      categoryListings = await Post.find(query)
-        .populate("userId", "name email profileImage")
-        .limit(Math.floor(limit / 2));
-    }
-
-    recommendations.push(...categoryListings);
-
-    // Remove duplicates
-    const uniqueRecommendations = Array.from(
-      new Map(recommendations.map((item) => [item._id, item])).values(),
-    );
-
-    res.status(200).json({
-      success: true,
-      count: uniqueRecommendations.slice(0, limit).length,
-      recommendations: uniqueRecommendations.slice(0, limit),
-    });
-  } catch (err) {
-    console.error("Get Recommendations Error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: err.message,
-    });
-  }
-};
-
 // Prefix search for locations using Trie algorithm
 const searchPrefix = async (req, res) => {
   try {
@@ -541,7 +469,6 @@ export {
   deletePost,
   getUserListings,
   searchNearby,
-  getRecommendations,
   searchPrefix,
   populateTrieIndex,
 };
@@ -565,5 +492,247 @@ export const reportPost = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Trie-based prefix search for locations and room names
+export const searchByPrefix = async (req, res) => {
+  try {
+    const { q } = req.query; // q = query
+
+    if (!q || q.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Query must be at least 2 characters",
+      });
+    }
+
+    // Get all active posts
+    const posts = await Post.find({ status: "available" })
+      .populate("userId", "name email")
+      .limit(50)
+      .lean();
+
+    // Build Trie from current posts
+    const { RoomListingSearcher } = await import("../utils/TrieSearch.js");
+    const searcher = new RoomListingSearcher();
+    searcher.indexRooms(posts);
+
+    // Search using Trie
+    const results = searcher.search(q);
+    const suggestions = searcher.getAutocompleteSuggestions(q, 10);
+
+    res.status(200).json({
+      success: true,
+      query: q,
+      suggestions,
+      results: results.slice(0, 20),
+      totalResults: results.length,
+    });
+  } catch (err) {
+    console.error("Prefix Search Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Search failed",
+      error: err.message,
+    });
+  }
+};
+
+// Geo-search: Find rooms within user's radius
+export const searchByNearby = async (req, res) => {
+  try {
+    const { lat, lon, radius = 5 } = req.query;
+
+    if (!lat || !lon) {
+      return res.status(400).json({
+        success: false,
+        message: "Latitude and longitude are required",
+      });
+    }
+
+    const userLocation = {
+      coordinates: [parseFloat(lon), parseFloat(lat)],
+    };
+
+    const maxDistance = parseFloat(radius);
+
+    // Get all active posts with location data - use lean() to get plain objects
+    const posts = await Post.find({ 
+      status: "available",
+      "location.coordinates": { $exists: true }
+    })
+      .populate("userId", "name email")
+      .select("-description")
+      .lean(); // Convert to plain JavaScript objects
+
+    // Use GeoSearch
+    const GeoSearch = (await import("../utils/geosearch.js")).default;
+    const nearbyRooms = GeoSearch.getNearbyRoomsWithLimit(
+      userLocation,
+      posts,
+      maxDistance,
+      50
+    );
+
+    const stats = GeoSearch.getNearbyRoomsStats(
+      userLocation,
+      posts,
+      maxDistance
+    );
+
+    res.status(200).json({
+      success: true,
+      userLocation: { lat, lon },
+      radiusKm: maxDistance,
+      stats,
+      rooms: nearbyRooms,
+      totalFound: nearbyRooms.length,
+    });
+  } catch (err) {
+    console.error("Nearby Search Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Geosearch failed",
+      error: err.message,
+    });
+  }
+};
+
+// Get personalized recommendations for the user
+export const getRecommendations = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const { limit = 5 } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    // Get user preferences if they exist
+    const user = await User.findById(userId);
+    
+    const userPreferences = {
+      preferredCity: user?.preferredCity || "Kathmandu",
+      minPrice: user?.minPrice || 5000,
+      maxPrice: user?.maxPrice || 50000,
+      desiredAmenities: user?.desiredAmenities || [],
+    };
+
+    // Get all available posts
+    const allPosts = await Post.find({ status: "available" })
+      .populate("userId", "name email rating")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Get recommendations using advanced algorithm
+    const RecommendationService = (await import("../utils/RecommendationService.js")).default;
+    const recommendations = RecommendationService.getAdvancedRecommendations(
+      allPosts,
+      userPreferences,
+      parseInt(limit)
+    );
+
+    // Optionally diversify recommendations
+    const diversified = RecommendationService.diversifyRecommendations(recommendations);
+
+    res.status(200).json({
+      success: true,
+      recommendations: diversified,
+      count: diversified.length,
+    });
+  } catch (err) {
+    console.error("Recommendations Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch recommendations",
+      error: err.message,
+    });
+  }
+};
+
+// Get recommendations similar to a specific room
+export const getSimilarRooms = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { limit = 5 } = req.query;
+
+    const targetRoom = await Post.findById(postId);
+
+    if (!targetRoom) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found",
+      });
+    }
+
+    // Get all other available rooms
+    const allRooms = await Post.find({
+      status: "available",
+      _id: { $ne: postId },
+    })
+      .populate("userId", "name email rating")
+      .limit(200)
+      .lean();
+
+    // Get similar rooms
+    const RecommendationService = (await import("../utils/RecommendationService.js")).default;
+    const similarRooms = RecommendationService.getContextualRecommendations(
+      targetRoom,
+      allRooms,
+      parseInt(limit)
+    );
+
+    res.status(200).json({
+      success: true,
+      originalRoom: targetRoom.name,
+      similarRooms,
+      count: similarRooms.length,
+    });
+  } catch (err) {
+    console.error("Similar Rooms Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch similar rooms",
+      error: err.message,
+    });
+  }
+};
+
+// Get trending rooms
+export const getTrendingRooms = async (req, res) => {
+  try {
+    const { limit = 5 } = req.query;
+
+    // Get all available rooms
+    const rooms = await Post.find({ status: "available" })
+      .populate("userId", "name email rating")
+      .select("+views +applicationCount") // Include fields if they're selected in schema
+      .sort({ views: -1, rating: -1 })
+      .limit(parseInt(limit) * 2) // Get more to score
+      .lean();
+
+    // Use trending algorithm
+    const RecommendationService = (await import("../utils/RecommendationService.js")).default;
+    const trending = RecommendationService.getTrendingRooms(
+      rooms,
+      parseInt(limit)
+    );
+
+    res.status(200).json({
+      success: true,
+      trending,
+      count: trending.length,
+    });
+  } catch (err) {
+    console.error("Trending Rooms Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch trending rooms",
+      error: err.message,
+    });
   }
 };
