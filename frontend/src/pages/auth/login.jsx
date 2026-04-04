@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { Button, Input, Alert } from "../../components/common/UIComponents";
+import { Eye, EyeOff } from "lucide-react";
+import { successToast, errorToast } from "../../utils/toast";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -10,18 +12,24 @@ export default function Login() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const { login, user } = useAuth();
-  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.email.includes("@")) newErrors.email = "Valid email is required";
+    if (!formData.email.includes("@"))
+      newErrors.email = "Valid email is required";
     if (!formData.password) newErrors.password = "Password is required";
     return newErrors;
   };
@@ -29,36 +37,34 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
-    
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     setLoading(true);
-    const result = await login(formData.email, formData.password);
 
-    if (result.success) {
-      // Redirect to admin panel if user is admin, otherwise to dashboard
-      setTimeout(() => {
-        if (user?.role === 'admin') {
-          navigate("/admin");
-        } else {
-          navigate("/dashboard");
-        }
-      }, 100);
-    } else {
-      setErrors({ submit: result.message });
+    try {
+      const result = await login(formData.email, formData.password);
+      if (result) {
+        setLoading(false);
+      }
+    } catch (error) {
+      errorToast("An unexpected error occurred. Please try again.");
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-white flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">Welcome Back</h2>
-          <p className="text-center text-gray-600 mb-6">Login to your RentIt account</p>
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">
+            Welcome Back
+          </h2>
+          <p className="text-center text-gray-600 mb-6">
+            Login to your RentIt account
+          </p>
 
           {errors.submit && <Alert type="error" message={errors.submit} />}
 
@@ -73,38 +79,53 @@ export default function Login() {
               error={errors.email}
             />
 
-            <Input
-              label="Password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              error={errors.password}
-            />
+            <div className="bg-transparent mt-1 rounded-md shadow-sm relative">
+              <Input
+                label="Password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                error={errors.password}
+              />
+              {showPassword ? (
+                <EyeOff
+                  className="absolute right-3 top-9.5 text-gray-500 w-5 h-5 cursor-pointer"
+                  onClick={togglePasswordVisibility}
+                />
+              ) : (
+                <Eye
+                  className="absolute right-3 top-9.5 text-gray-500 w-5 h-5 cursor-pointer"
+                  onClick={togglePasswordVisibility}
+                />
+              )}
+            </div>
 
-            {/* <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2">
                 <input type="checkbox" className="w-4 h-4" />
                 <span className="text-gray-700">Remember me</span>
               </label>
-              <Link to="/forgot-password" className="text-pink-600 hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-pink-600 hover:underline"
+              >
                 Forgot password?
               </Link>
-            </div> */}
+            </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full"
-            >
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
 
           <p className="text-center text-gray-600 mt-6">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-pink-600 font-semibold hover:underline">
+            <Link
+              to="/signup"
+              className="text-pink-600 font-semibold hover:underline"
+            >
               Sign Up
             </Link>
           </p>

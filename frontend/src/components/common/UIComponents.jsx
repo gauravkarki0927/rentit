@@ -8,7 +8,7 @@ export const Button = ({
   className = '', 
   ...props 
 }) => {
-  const baseStyles = 'font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const baseStyles = 'font-medium rounded-md cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
   
   const variants = {
     primary: 'bg-pink-600 text-white hover:bg-pink-700 focus:ring-pink-500',

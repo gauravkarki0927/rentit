@@ -22,12 +22,7 @@ const CreatePostSchema = new Schema(
     category: {
       type: String,
       required: [true, "Category is required"],
-      enum: [
-        "Room",
-        "Flat",
-        "Attached Kitchen",
-        "Attached Bathroom",
-      ],
+      enum: ["Room", "Flat", "Attached Kitchen", "Attached Bathroom"],
     },
     images: [
       {
@@ -61,7 +56,11 @@ const CreatePostSchema = new Schema(
     status: {
       type: String,
       enum: ["available", "rented", "inactive"],
-      default: "available",
+      default: "inactive",
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
     },
     rating: {
       type: Number,
@@ -78,7 +77,7 @@ const CreatePostSchema = new Schema(
       default: Date.now,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const PostModel = model("Post", CreatePostSchema);

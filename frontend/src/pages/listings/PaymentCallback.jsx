@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Card, Loading, Alert } from "../../components/common/UIComponents";
+import {
+  Card,
+  Loading,
+  Alert,
+  Button,
+} from "../../components/common/UIComponents";
 import { CheckCircle, XCircle, Clock } from "lucide-react";
 
 export default function PaymentCallback() {
@@ -22,49 +27,40 @@ export default function PaymentCallback() {
   const verifyPayment = async () => {
     try {
       const pidx = searchParams.get("pidx");
-      const transactionId = searchParams.get("transaction_id");
-      const paymentStatus = searchParams.get("status");
 
-      if (!pidx && !transactionId) {
+      if (!pidx) {
         setStatus("failed");
-        setMessage("Invalid payment reference. Please contact support.");
+        setMessage("Invalid payment reference.");
         return;
       }
 
-      // Call backend to verify payment with Khalti
       const response = await axios.post(
-        `${API_BASE_URL}/payments/khalti/verify`,
-        { pidx: pidx || transactionId },
+        `${API_BASE_URL}/room-payments/verify`,
+        { pidx },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        },
       );
 
-      if (response.data.success && response.data.status === "Completed") {
+      if (response.data.success === true && response.data.paymentStatus === "success") {
         setStatus("success");
-        setMessage("Payment successful! Your booking has been confirmed.");
-        setPaymentDetails(response.data.payment);
+        setMessage("Payment successful! Your room listing is now active.");
 
-        // Redirect to dashboard after 3 seconds
         setTimeout(() => {
-          navigate("/dashboard");
+          navigate("/owner-dashboard");
         }, 3000);
-      } else if (response.data.status === "Pending") {
-        setStatus("pending");
-        setMessage(
-          "Payment is pending. Please wait while we verify your transaction."
-        );
       } else {
         setStatus("failed");
-        setMessage(
-          `Payment ${response.data.status || "failed"}. Please try again.`
-        );
+        setMessage(response.data.message || "Payment verification failed");
       }
     } catch (error) {
       console.error("Payment verification error:", error);
       setStatus("failed");
       setMessage(
-        error.response?.data?.message || "Failed to verify payment. Please contact support."
+        error.response?.data?.message ||
+          "Failed to verify payment. Please contact support.",
       );
     }
   };
@@ -97,7 +93,8 @@ export default function PaymentCallback() {
                   {paymentDetails.transaction_id || paymentDetails.pidx}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <strong>Amount:</strong> Rs. {paymentDetails.total_amount / 100}
+                  <strong>Amount:</strong> Rs.{" "}
+                  {paymentDetails.total_amount / 100}
                 </p>
               </div>
             )}

@@ -1,5 +1,16 @@
-import express from "express"
-import { createPost, getPost, getPostById, updatePost, deletePost, getUserListings, searchNearby, getRecommendations } from "../controller/PostController.js";
+import express from "express";
+import {
+  createPost,
+  getPost,
+  getPostById,
+  updatePost,
+  deletePost,
+  getUserListings,
+  searchNearby,
+  getRecommendations,
+  searchPrefix,
+  reportPost,
+} from "../controller/PostController.js";
 import { protect } from "../middleware/auth.js";
 import { uploadListing } from "../config/multer.js";
 const PostRouter = express.Router();
@@ -163,13 +174,15 @@ const PostRouter = express.Router();
  *         description: Post not found
  */
 
-PostRouter.post('/', protect, uploadListing.array('images', 10), createPost);
-PostRouter.get('/my-listings', protect, getUserListings);
-PostRouter.get('/nearby', searchNearby);
-PostRouter.get('/recommendations', getRecommendations);
-PostRouter.get('/', getPost);
-PostRouter.get('/:id', getPostById);
-PostRouter.put('/:id', protect, uploadListing.array('images', 10), updatePost);
-PostRouter.delete('/:id', protect, deletePost);
+PostRouter.post("/", protect, uploadListing.array("images", 10), createPost);
+PostRouter.get("/my-listings", protect, getUserListings);
+PostRouter.get("/search/prefix", searchPrefix);
+PostRouter.get("/nearby", searchNearby);
+PostRouter.get("/recommendations", getRecommendations);
+PostRouter.get("/", getPost);
+PostRouter.get("/:id", getPostById);
+PostRouter.put("/:id", protect, uploadListing.array("images", 10), updatePost);
+PostRouter.delete("/:id", protect, deletePost);
+PostRouter.post("/:postId/report", protect, reportPost);
 
 export default PostRouter;

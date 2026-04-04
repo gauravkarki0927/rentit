@@ -45,11 +45,13 @@ const UserSchema = new Schema(
       state: String,
       country: String,
       zipCode: String,
+      latitude: Number,
+      longitude: Number,
     },
     userType: {
       type: String,
-      enum: ["owner", "renter", "both"],
-      default: "both",
+      enum: ["tenant", "owner"],
+      default: "tenant",
     },
     role: {
       type: String,
@@ -60,10 +62,22 @@ const UserSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    kycDocument: {
+      type: String, // URL/Path to citizenship/ID image
+      default: null,
+    },
+    kycStatus: {
+      type: String,
+      enum: ["unsubmitted", "pending", "approved", "rejected"],
+      default: "unsubmitted",
+    },
+    kycSubmittedAt: Date,
     isActive: {
       type: Boolean,
       default: true,
     },
+    emailVerificationCode: String,
+    emailVerificationExpire: Date,
     verificationToken: String,
     verificationExpires: Date,
     resetPasswordToken: String,
@@ -89,7 +103,7 @@ const UserSchema = new Schema(
       default: Date.now,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Hash password before saving

@@ -13,20 +13,31 @@ import {
   Star,
   Calendar,
   AlertCircle,
+  Flag,
 } from "lucide-react";
-import { Card, Loading, Alert, Button } from "../../components/common/UIComponents";
+import {
+  Card,
+  Loading,
+  Alert,
+  Button,
+} from "../../components/common/UIComponents";
 import { useAuth } from "../../context/useAuth";
 
 export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, token } = useAuth();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("Fake Listing");
+  const [reportDescription, setReportDescription] = useState("");
+  const [reporting, setReporting] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState("");
 
   const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
@@ -72,7 +83,7 @@ export default function ListingDetail() {
   const handlePrevImage = () => {
     if (listing?.images?.length) {
       setCurrentImageIndex((prev) =>
-        prev === 0 ? listing.images.length - 1 : prev - 1
+        prev === 0 ? listing.images.length - 1 : prev - 1,
       );
     }
   };
@@ -80,7 +91,7 @@ export default function ListingDetail() {
   const handleNextImage = () => {
     if (listing?.images?.length) {
       setCurrentImageIndex((prev) =>
-        prev === listing.images.length - 1 ? 0 : prev + 1
+        prev === listing.images.length - 1 ? 0 : prev + 1,
       );
     }
   };
@@ -106,6 +117,35 @@ export default function ListingDetail() {
     });
   };
 
+  const handleReportPost = async () => {
+    try {
+      setReporting(true);
+      const resp = await axios.post(
+        `${API_BASE_URL}/posts/${id}/report`,
+        {
+          reason: reportReason,
+          description: reportDescription,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token || localStorage.getItem("token")}`,
+          },
+        },
+      );
+      if (resp.data.success) {
+        setReportSuccess("Report submitted successfully.");
+        setTimeout(() => {
+          setReportModalOpen(false);
+          setReportSuccess("");
+        }, 2000);
+      }
+    } catch (err) {
+      setError("Failed to submit report");
+    } finally {
+      setReporting(false);
+    }
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -120,10 +160,21 @@ export default function ListingDetail() {
 
   const averageRating =
     reviews.length > 0
-      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+      ? (
+          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        ).toFixed(1)
       : 0;
 
-  const images = listing.images && listing.images.length > 0 ? listing.images : ["/placeholder-listing.jpg"];
+  const images =
+    listing.images && listing.images.length > 0
+      ? listing.images.map((img) =>
+          img.startsWith("http")
+            ? img
+            : `${import.meta.env.VITE_IMAGE_BASE_URL || "http://localhost:3000"}${img}`,
+        )
+      : [
+          `${import.meta.env.VITE_IMAGE_BASE_URL || "http://localhost:3000"}/uploads/placeholder-listing.jpg`,
+        ];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -147,6 +198,7 @@ export default function ListingDetail() {
                 alt={listing.name}
                 className="w-full h-full object-cover"
               />
+
               {images.length > 1 && (
                 <>
                   <button
@@ -175,11 +227,17 @@ export default function ListingDetail() {
                   <button
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                      idx === currentImageIndex ? "border-blue-600" : "border-gray-300"
+                    className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
+                      idx === currentImageIndex
+                        ? "border-blue-600"
+                        : "border-gray-300"
                     }`}
                   >
-                    <img src={img} alt={`${listing.name} ${idx}`} className="w-full h-full object-cover" />
+                    <img
+                      src={img}
+                      alt={`${listing.name} ${idx}`}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -187,18 +245,27 @@ export default function ListingDetail() {
 
             {/* Details Card */}
             <Card className="p-6">
-              <h1 className="text-3xl font-bold mb-2">{listing.name}</h1>
+              <div className="flex justify-between items-start mb-2">
+                <h1 className="text-3xl font-bold">{listing.name}</h1>
+                {listing.isFeatured && (
+                  <div className="bg-yellow-100 text-yellow-700 text-[10px] font-black px-2 py-1 rounded border border-yellow-200 flex items-center gap-1">
+                    <Star size={12} fill="currentColor" /> FEATURED
+                  </div>
+                )}
+              </div>
 
               {/* Location */}
               <div className="flex items-start gap-2 text-gray-600 mb-4">
-                <MapPin className="flex-shrink-0 mt-1" size={20} />
+                <MapPin className="shrink-0 mt-1" size={20} />
                 <div>
                   <p className="font-medium">
                     {listing.location?.street && `${listing.location.street}, `}
                     {listing.location?.city && `${listing.location.city}, `}
                     {listing.location?.state}
                   </p>
-                  {listing.location?.zipCode && <p className="text-sm">{listing.location.zipCode}</p>}
+                  {listing.location?.zipCode && (
+                    <p className="text-sm">{listing.location.zipCode}</p>
+                  )}
                 </div>
               </div>
 
@@ -227,7 +294,11 @@ export default function ListingDetail() {
                 {averageRating > 0 && (
                   <div className="flex items-center gap-3">
                     <div className="bg-yellow-100 p-3 rounded-lg">
-                      <Star className="text-yellow-600" size={20} fill="currentColor" />
+                      <Star
+                        className="text-yellow-600"
+                        size={20}
+                        fill="currentColor"
+                      />
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Rating</p>
@@ -240,7 +311,9 @@ export default function ListingDetail() {
               {/* Description */}
               <div className="mt-6">
                 <h2 className="text-xl font-bold mb-2">Description</h2>
-                <p className="text-gray-700 leading-relaxed">{listing.description}</p>
+                <p className="text-gray-700 leading-relaxed">
+                  {listing.description}
+                </p>
               </div>
 
               {/* Owner Information */}
@@ -260,7 +333,10 @@ export default function ListingDetail() {
                         <Mail size={20} className="text-gray-600" />
                         <div>
                           <p className="text-sm text-gray-600">Email</p>
-                          <a href={`mailto:${listing.userId.email}`} className="text-blue-600 hover:underline">
+                          <a
+                            href={`mailto:${listing.userId.email}`}
+                            className="text-blue-600 hover:underline"
+                          >
                             {listing.userId.email}
                           </a>
                         </div>
@@ -273,28 +349,41 @@ export default function ListingDetail() {
 
             {/* Reviews Section */}
             <Card className="p-6 mt-6">
-              <h2 className="text-xl font-bold mb-4">Reviews ({reviews.length})</h2>
+              <h2 className="text-xl font-bold mb-4">
+                Reviews ({reviews.length})
+              </h2>
               {loadingReviews ? (
                 <div className="text-center py-8">Loading reviews...</div>
               ) : reviews.length > 0 ? (
                 <div className="space-y-4">
                   {reviews.map((review) => (
-                    <div key={review._id} className="border-b pb-4 last:border-b-0">
+                    <div
+                      key={review._id}
+                      className="border-b pb-4 last:border-b-0"
+                    >
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="font-semibold">{review.reviewer?.name || "Anonymous"}</p>
+                          <p className="font-semibold">
+                            {review.reviewer?.name || "Anonymous"}
+                          </p>
                           <div className="flex items-center gap-1">
                             {[...Array(5)].map((_, i) => (
                               <Star
                                 key={i}
                                 size={16}
-                                className={i < review.rating ? "text-yellow-500" : "text-gray-300"}
+                                className={
+                                  i < review.rating
+                                    ? "text-yellow-500"
+                                    : "text-gray-300"
+                                }
                                 fill="currentColor"
                               />
                             ))}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
                       <p className="text-gray-700">{review.comment}</p>
                     </div>
@@ -312,13 +401,30 @@ export default function ListingDetail() {
             <Card className="p-6 sticky top-24 mb-6">
               <div className="mb-4">
                 <p className="text-gray-600 text-sm mb-1">Monthly Rent</p>
-                <p className="text-4xl font-bold text-green-600">Rs. {listing.price}</p>
+                <p className="text-4xl font-bold text-green-600">
+                  Rs. {listing.price}
+                </p>
               </div>
 
               {user?._id === listing?.userId?._id ? (
                 <div className="bg-gray-50 p-4 rounded-lg text-center">
-                  <AlertCircle className="mx-auto mb-2 text-gray-400" size={32} />
-                  <p className="text-gray-600 font-medium">This is your listing</p>
+                  <AlertCircle
+                    className="mx-auto mb-2 text-gray-400"
+                    size={32}
+                  />
+                  <p className="text-gray-600 font-medium">
+                    This is your listing
+                  </p>
+                </div>
+              ) : user?.userType === "owner" ? (
+                <div className="bg-gray-50 p-4 rounded-lg text-center">
+                  <AlertCircle
+                    className="mx-auto mb-2 text-gray-400"
+                    size={32}
+                  />
+                  <p className="text-gray-600 font-medium">
+                    Owner Account is not authorized to apply for listings
+                  </p>
                 </div>
               ) : (
                 <Button
@@ -329,7 +435,7 @@ export default function ListingDetail() {
                 </Button>
               )}
 
-              <div className="space-y-3 text-sm text-gray-600">
+              <div className="mt-6 space-y-3 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <Calendar size={18} />
                   <span>Available from immediately</span>
@@ -339,16 +445,84 @@ export default function ListingDetail() {
                   <span>{listing.category}</span>
                 </div>
               </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <button
+                  onClick={() => setReportModalOpen(true)}
+                  className="flex items-center justify-center gap-2 text-red-500 text-sm font-bold hover:text-red-700 transition w-full"
+                >
+                  <Flag size={16} /> Report Listing
+                </button>
+              </div>
             </Card>
 
             {/* Similar Listings */}
             <Card className="p-6">
               <h3 className="font-bold mb-4">Similar Listings</h3>
-              <p className="text-gray-500 text-center py-8">Check back soon for similar properties</p>
+              <p className="text-gray-500 text-center py-8">
+                Check back soon for similar properties
+              </p>
             </Card>
           </div>
         </div>
       </div>
+
+      {reportModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold mb-4">Report Listing</h3>
+            {reportSuccess ? (
+              <Alert type="success" message={reportSuccess} />
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black uppercase text-gray-400 mb-1">
+                    Reason
+                  </label>
+                  <select
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full bg-gray-50 border rounded-lg p-3 text-sm font-medium"
+                  >
+                    <option value="Fake Listing">Fake Listing</option>
+                    <option value="Incorrect Price">Incorrect Price</option>
+                    <option value="Already Rented">Already Rented</option>
+                    <option value="Abusive Content">Abusive Content</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase text-gray-400 mb-1">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    value={reportDescription}
+                    onChange={(e) => setReportDescription(e.target.value)}
+                    rows="3"
+                    className="w-full bg-gray-50 border rounded-lg p-3 text-sm font-medium focus:ring-2 ring-pink-500 outline-none"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setReportModalOpen(false)}
+                    variant="secondary"
+                    className="flex-1 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleReportPost}
+                    disabled={reporting}
+                    className="flex-1 text-xs bg-red-600 hover:bg-red-700 uppercase tracking-widest font-black"
+                  >
+                    {reporting ? "Submitting..." : "Submit Report"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

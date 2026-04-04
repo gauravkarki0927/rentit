@@ -49,11 +49,6 @@ const ApplicationSchema = new Schema(
       enum: ["pending", "accepted", "rejected"],
       default: "pending",
     },
-    paymentStatus: {
-      type: String,
-      enum: ["pending", "completed", "failed", "refunded"],
-      default: "pending",
-    },
     createdAt: {
       type: Date,
       default: Date.now,

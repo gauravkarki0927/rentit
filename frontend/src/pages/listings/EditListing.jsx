@@ -257,7 +257,7 @@ export default function EditListing() {
       if (response.data.success) {
         setSuccess('Listing updated successfully!');
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/owner-dashboard');
         }, 2000);
       }
     } catch (err) {
@@ -286,7 +286,7 @@ export default function EditListing() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/owner-dashboard')}
             className="flex items-center gap-2 text-pink-600 hover:text-pink-700 mb-4"
           >
             <ArrowLeft size={18} />

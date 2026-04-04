@@ -69,7 +69,7 @@ export default function VerifyEmail() {
             placeholder="Enter 6-digit code"
           />
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Verifying..." : "Verify Email"}
+            {loading ? "Verifying..." : "Verify OTP"}
           </Button>
         </form>
       </Card>
